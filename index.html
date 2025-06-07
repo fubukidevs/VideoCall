@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp Video Call</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #000;
+            overflow: hidden;
+            position: relative;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* Background Video */
+        .video-background {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .background-video {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            min-width: 100%;
+            min-height: 100%;
+            width: auto;
+            height: auto;
+            object-fit: cover;
+            filter: brightness(0.4) blur(1px);
+        }
+
+        .video-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        /* Header */
+        .header {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 100px;
+            background: linear-gradient(180deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.3) 70%, transparent 100%);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 40px 20px 20px;
+            z-index: 10;
+        }
+
+        .contact-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .contact-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #25D366, #128C7E);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .contact-details h3 {
+            color: white;
+            font-size: 16px;
+            font-weight: 500;
+            margin-bottom: 2px;
+        }
+
+        .call-status {
+            color: rgba(255,255,255,0.8);
+            font-size: 13px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.8; }
+            50% { opacity: 1; }
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 20px;
+        }
+
+        .header-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .header-btn:active {
+            background: rgba(255,255,255,0.3);
+            transform: scale(0.95);
+        }
+
+        /* Self Video Preview */
+        .self-video {
+            position: absolute;
+            top: 120px;
+            right: 20px;
+            width: 120px;
+            height: 180px;
+            background: #000;
+            border-radius: 12px;
+            overflow: hidden;
+            z-index: 5;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        }
+
+        .self-video-content {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #4facfe, #00f2fe);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 48px;
+            animation: selfVideoMove 4s ease-in-out infinite;
+        }
+
+        .user-video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1); /* Mirror effect like front camera */
+        }
+
+        .camera-placeholder {
+            width: 100%;
+            height: 100%;
+            background: #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+            font-size: 36px;
+        }
+
+        @keyframes selfVideoMove {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-5px); }
+        }
+
+        /* Main Contact Video Area */
+        .main-video {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #25D366, #128C7E);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 80px;
+            font-weight: bold;
+            box-shadow: 0 0 50px rgba(37, 211, 102, 0.3);
+            animation: mainVideoBreath 3s ease-in-out infinite;
+        }
+
+        @keyframes mainVideoBreath {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.05); }
+        }
+
+        /* Connection Status */
+        .connection-status {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            margin-top: 140px;
+            color: rgba(255,255,255,0.8);
+            font-size: 14px;
+            text-align: center;
+        }
+
+        /* Bottom Controls */
+        .controls {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 150px;
+            background: linear-gradient(0deg, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.5) 60%, transparent 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 40px;
+            padding-bottom: 40px;
+        }
+
+        .control-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .control-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(255,255,255,0.3);
+            border-radius: 50%;
+            transition: all 0.3s;
+            transform: translate(-50%, -50%);
+        }
+
+        .control-btn:active::before {
+            width: 100%;
+            height: 100%;
+        }
+
+        .btn-end {
+            background: #ff4757;
+            color: white;
+            box-shadow: 0 4px 20px rgba(255, 71, 87, 0.4);
+        }
+
+        .btn-end:active {
+            background: #ff3742;
+            transform: scale(0.95);
+        }
+
+        .btn-mute {
+            background: rgba(255,255,255,0.2);
+            color: white;
+        }
+
+        .btn-mute:active {
+            background: rgba(255,255,255,0.3);
+            transform: scale(0.95);
+        }
+
+        .btn-camera {
+            background: rgba(255,255,255,0.2);
+            color: white;
+        }
+
+        .btn-camera:active {
+            background: rgba(255,255,255,0.3);
+            transform: scale(0.95);
+        }
+
+        /* Muted State */
+        .muted .btn-mute {
+            background: #ff4757;
+        }
+
+        .camera-off .btn-camera {
+            background: #ff4757;
+        }
+
+        .camera-off .user-video {
+            display: none;
+        }
+
+        .camera-off .camera-placeholder {
+            display: flex;
+        }
+
+        .camera-on .camera-placeholder {
+            display: none;
+        }
+
+        /* Ripple Effect */
+        .ripple {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.6);
+            transform: scale(0);
+            animation: ripple 0.6s linear;
+            pointer-events: none;
+        }
+
+        @keyframes ripple {
+            to {
+                transform: scale(4);
+                opacity: 0;
+            }
+        }
+
+        /* Call Timer */
+        .call-timer {
+            position: absolute;
+            top: 320px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            font-size: 16px;
+            font-weight: 500;
+            background: rgba(0,0,0,0.3);
+            padding: 8px 16px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        /* Incoming call animation */
+        .incoming-call {
+            animation: incomingPulse 1s ease-in-out infinite;
+        }
+
+        @keyframes incomingPulse {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.1); }
+        }
+
+        /* Network indicator */
+        .network-indicator {
+            position: absolute;
+            top: 60px;
+            right: 20px;
+            display: flex;
+            gap: 2px;
+            z-index: 15;
+        }
+
+        .signal-bar {
+            width: 3px;
+            height: 12px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 1px;
+        }
+
+        .signal-bar.active {
+            background: #25D366;
+            animation: signalPulse 2s infinite;
+        }
+
+        @keyframes signalPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Background Video -->
+    <div class="video-background">
+        <video class="background-video" autoplay muted loop playsinline>
+            <source src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
+            <!-- Fallback para vídeo local -->
+            <!-- <source src="video.mp4" type="video/mp4"> -->
+        </video>
+        <div class="video-overlay"></div>
+    </div>
+    
+    <!-- Network Indicator -->
+    <div class="network-indicator">
+        <div class="signal-bar active"></div>
+        <div class="signal-bar active"></div>
+        <div class="signal-bar active"></div>
+        <div class="signal-bar"></div>
+    </div>
+
+    <!-- Header -->
+    <div class="header">
+        <div class="contact-info">
+            <div class="contact-avatar">AM</div>
+            <div class="contact-details">
+                <h3>Amanda</h3>
+                <div class="call-status">Chamando...</div>
+            </div>
+        </div>
+        <div class="header-actions">
+            <button class="header-btn" onclick="toggleFullscreen()">⛶</button>
+        </div>
+    </div>
+
+    <!-- Self Video Preview -->
+    <div class="self-video">
+        <video class="user-video" id="userVideo" autoplay playsinline muted></video>
+        <div class="camera-placeholder">📷</div>
+    </div>
+
+    <!-- Main Video Area -->
+    <div class="main-video incoming-call">AM</div>
+
+    <!-- Connection Status -->
+    <div class="connection-status">Conectando...</div>
+
+    <!-- Call Timer -->
+    <div class="call-timer">00:00</div>
+
+    <!-- Bottom Controls -->
+    <div class="controls">
+        <button class="control-btn btn-mute" onclick="toggleMute()" id="muteBtn">🎤</button>
+        <button class="control-btn btn-end" onclick="endCall()">📞</button>
+        <button class="control-btn btn-camera" onclick="toggleCamera()" id="cameraBtn">📹</button>
+    </div>
+
+    <script>
+        let isMuted = false;
+        let cameraOff = false;
+        let callStarted = false;
+        let callTimer = 0;
+        let timerInterval;
+        let userStream = null;
+        let userVideo = document.getElementById('userVideo');
+
+        // Initialize camera
+        async function initCamera() {
+            try {
+                // Request camera permission and start video
+                userStream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { 
+                        facingMode: 'user', // Front camera
+                        width: { ideal: 720 },
+                        height: { ideal: 1280 }
+                    }, 
+                    audio: true 
+                });
+                
+                userVideo.srcObject = userStream;
+                document.body.classList.add('camera-on');
+                
+                console.log('Camera initialized successfully');
+            } catch (error) {
+                console.error('Error accessing camera:', error);
+                // Show permission request message
+                showCameraPermissionRequest();
+            }
+        }
+
+        function showCameraPermissionRequest() {
+            const overlay = document.createElement('div');
+            overlay.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.8);
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                z-index: 1000;
+                color: white;
+                text-align: center;
+                padding: 20px;
+            `;
+            
+            overlay.innerHTML = `
+                <div style="font-size: 64px; margin-bottom: 20px;">📹</div>
+                <h2 style="margin-bottom: 15px;">Permissão de Câmera</h2>
+                <p style="margin-bottom: 30px; opacity: 0.8; line-height: 1.4;">
+                    Para usar a videochamada, precisamos acessar sua câmera.<br>
+                    Clique em "Permitir" quando o navegador solicitar.
+                </p>
+                <button onclick="requestCameraAgain()" style="
+                    padding: 12px 24px;
+                    background: #25D366;
+                    color: white;
+                    border: none;
+                    border-radius: 25px;
+                    font-size: 16px;
+                    cursor: pointer;
+                ">Tentar Novamente</button>
+                <button onclick="skipCamera()" style="
+                    padding: 8px 16px;
+                    background: transparent;
+                    color: #ccc;
+                    border: 1px solid #666;
+                    border-radius: 20px;
+                    font-size: 14px;
+                    cursor: pointer;
+                    margin-top: 15px;
+                ">Pular por Agora</button>
+            `;
+            
+            document.body.appendChild(overlay);
+            window.cameraOverlay = overlay;
+        }
+
+        function requestCameraAgain() {
+            if (window.cameraOverlay) {
+                window.cameraOverlay.remove();
+            }
+            initCamera();
+        }
+
+        function skipCamera() {
+            if (window.cameraOverlay) {
+                window.cameraOverlay.remove();
+            }
+            // Continue without camera
+            console.log('User skipped camera permission');
+        }
+        function startCall() {
+            if (callStarted) return;
+            
+            callStarted = true;
+            document.querySelector('.call-status').textContent = 'Conectado';
+            document.querySelector('.connection-status').textContent = 'Conectado';
+            document.querySelector('.main-video').classList.remove('incoming-call');
+            
+            // Start timer
+            timerInterval = setInterval(() => {
+                callTimer++;
+                const minutes = Math.floor(callTimer / 60);
+                const seconds = callTimer % 60;
+                document.querySelector('.call-timer').textContent = 
+                    `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            }, 1000);
+        }
+
+        // Auto start call after 3 seconds
+        setTimeout(startCall, 3000);
+
+        function toggleMute() {
+            const btn = document.getElementById('muteBtn');
+            const body = document.body;
+            
+            isMuted = !isMuted;
+            
+            if (isMuted) {
+                btn.textContent = '🔇';
+                body.classList.add('muted');
+            } else {
+                btn.textContent = '🎤';
+                body.classList.remove('muted');
+            }
+            
+            createRipple(btn);
+        }
+
+        function toggleCamera() {
+            const btn = document.getElementById('cameraBtn');
+            const body = document.body;
+            
+            cameraOff = !cameraOff;
+            
+            if (cameraOff) {
+                btn.textContent = '📷';
+                body.classList.add('camera-off');
+                body.classList.remove('camera-on');
+                // Stop video stream
+                if (userStream) {
+                    userStream.getVideoTracks().forEach(track => track.enabled = false);
+                }
+            } else {
+                btn.textContent = '📹';
+                body.classList.remove('camera-off');
+                body.classList.add('camera-on');
+                // Resume video stream
+                if (userStream) {
+                    userStream.getVideoTracks().forEach(track => track.enabled = true);
+                } else {
+                    // Try to initialize camera if not already done
+                    initCamera();
+                }
+            }
+            
+            createRipple(btn);
+        }
+
+        function endCall() {
+            // Stop camera stream
+            if (userStream) {
+                userStream.getTracks().forEach(track => track.stop());
+            }
+            
+            // Pause background video
+            const video = document.querySelector('.background-video');
+            if (video) video.pause();
+            
+            // Simulate call ending
+            document.body.style.background = '#000';
+            document.querySelector('.video-background').style.display = 'none';
+            
+            // Show call ended screen
+            setTimeout(() => {
+                document.body.innerHTML = `
+                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; color: white; text-align: center; background: #000;">
+                        <div style="font-size: 64px; margin-bottom: 20px;">📞</div>
+                        <h2 style="margin-bottom: 10px;">Chamada encerrada</h2>
+                        <p style="opacity: 0.7;">Duração: ${document.querySelector('.call-timer').textContent}</p>
+                        <button onclick="location.reload()" style="margin-top: 30px; padding: 12px 24px; background: #25D366; color: white; border: none; border-radius: 25px; font-size: 16px; cursor: pointer;">Ligar novamente</button>
+                    </div>
+                `;
+            }, 500);
+        }
+
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        function createRipple(button) {
+            const ripple = document.createElement('span');
+            const rect = button.getBoundingClientRect();
+            const size = Math.max(rect.width, rect.height);
+            
+            ripple.style.width = ripple.style.height = size + 'px';
+            ripple.style.left = '50%';
+            ripple.style.top = '50%';
+            ripple.style.transform = 'translate(-50%, -50%)';
+            ripple.classList.add('ripple');
+            
+            button.appendChild(ripple);
+            
+            setTimeout(() => {
+                ripple.remove();
+            }, 600);
+        }
+
+        // Add touch feedback for mobile
+        document.querySelectorAll('button').forEach(button => {
+            button.addEventListener('touchstart', function(e) {
+                this.style.transform = 'scale(0.95)';
+            });
+            
+            button.addEventListener('touchend', function(e) {
+                this.style.transform = 'scale(1)';
+            });
+        });
+
+        // Simulate network changes
+        setInterval(() => {
+            const bars = document.querySelectorAll('.signal-bar');
+            const activeCount = Math.floor(Math.random() * 4) + 1;
+            
+            bars.forEach((bar, index) => {
+                if (index < activeCount) {
+                    bar.classList.add('active');
+                } else {
+                    bar.classList.remove('active');
+                }
+            });
+        }, 5000);
+
+        // Initialize camera when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            userVideo = document.getElementById('userVideo');
+            
+            // Initialize camera after a short delay
+            setTimeout(() => {
+                initCamera();
+            }, 1000);
+            
+            // Ensure background video plays
+            const video = document.querySelector('.background-video');
+            if (video) {
+                video.play().catch(e => {
+                    console.log('Autoplay prevented, user interaction required');
+                });
+            }
+        });
+
+        // Play video on first user interaction
+        document.addEventListener('touchstart', function() {
+            const video = document.querySelector('.background-video');
+            if (video && video.paused) {
+                video.play();
+            }
+        }, { once: true });
+        // Prevent context menu on long press
+        document.addEventListener('contextmenu', e => e.preventDefault());
+        
+        // Prevent zoom on double tap
+        let lastTouchEnd = 0;
+        document.addEventListener('touchend', function (event) {
+            const now = (new Date()).getTime();
+            if (now - lastTouchEnd <= 300) {
+                event.preventDefault();
+            }
+            lastTouchEnd = now;
+        }, false);
+    </script>
+</body>
+</html>
