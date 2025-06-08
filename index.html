@@ -401,44 +401,33 @@
         let userStream = null;
         let userVideo = document.getElementById('userVideo');
 
-        // Sistema de sessão única - VERSÃO CORRIGIDA
-        function checkSessionValidity() {
-            const sessionKey = 'whatsapp_call_sessions';
-            const urlParams = new URLSearchParams(window.location.search);
-            const callId = urlParams.get('id') || window.location.href; // Usa URL completa se não tiver ID
+        // Sistema de sessão única - VERSÃO MAIS SIMPLES
+        function checkAndBlockSession() {
+            const STORAGE_KEY = 'videocall_blocked';
+            const currentUrl = window.location.href;
             
-            try {
-                // Tenta recuperar sessões usadas
-                const usedSessions = JSON.parse(localStorage.getItem(sessionKey) || '[]');
-                
-                console.log('Verificando sessão:', callId);
-                console.log('Sessões usadas:', usedSessions);
-                
-                // Verifica se esta chamada já foi usada
-                if (usedSessions.includes(callId)) {
-                    console.log('Sessão já foi usada - BLOQUEANDO');
-                    showCallExpiredScreen();
-                    return false;
-                }
-                
-                // Marca esta sessão como usada
-                usedSessions.push(callId);
-                localStorage.setItem(sessionKey, JSON.stringify(usedSessions));
-                console.log('Sessão marcada como usada:', callId);
-                
-                // Marca também com timestamp para debug
-                localStorage.setItem('last_call_time', new Date().toISOString());
-                
-                return true;
-            } catch (error) {
-                console.error('Erro no sistema de sessão:', error);
-                // Se der erro, permite acesso (fallback)
-                return true;
+            console.log('🔍 Verificando sessão para:', currentUrl);
+            
+            // Verifica se já foi usado
+            const isBlocked = localStorage.getItem(STORAGE_KEY);
+            
+            if (isBlocked === 'true') {
+                console.log('❌ SESSÃO BLOQUEADA - Mostrando tela de erro');
+                showBlockedScreen();
+                return false;
             }
+            
+            console.log('✅ Primeira vez - Permitindo acesso');
+            return true;
         }
 
-        function showCallExpiredScreen() {
-            console.log('Mostrando tela de sessão expirada');
+        function blockSession() {
+            const STORAGE_KEY = 'videocall_blocked';
+            localStorage.setItem(STORAGE_KEY, 'true');
+            console.log('🔒 Sessão marcada como bloqueada');
+        }
+
+        function showBlockedScreen() {
             document.body.innerHTML = `
                 <div style="
                     display: flex; 
@@ -465,19 +454,9 @@
                             Esta videochamada já foi utilizada e não está mais disponível.
                         </p>
                         <p style="opacity: 0.7; font-size: 14px; margin-bottom: 30px;">
-                            Para sua segurança, cada link de chamada só pode ser usado uma vez.
+                            Para sua segurança, cada link só pode ser usado uma vez.
                         </p>
-                        <div style="
-                            background: rgba(255,255,255,0.1); 
-                            padding: 15px; 
-                            border-radius: 10px; 
-                            margin-bottom: 25px;
-                        ">
-                            <p style="font-size: 14px; margin: 0; opacity: 0.8;">
-                                💡 Solicite um novo link para participar de uma nova chamada
-                            </p>
-                        </div>
-                        <button onclick="debugSession()" style="
+                        <button onclick="clearDebug()" style="
                             padding: 8px 16px;
                             background: rgba(255,255,255,0.2);
                             color: white;
@@ -487,7 +466,7 @@
                             cursor: pointer;
                             margin-bottom: 15px;
                         ">
-                            Debug Info
+                            Reset (Debug)
                         </button>
                         <br>
                         <button onclick="window.close()" style="
@@ -499,8 +478,7 @@
                             font-size: 16px;
                             font-weight: 500;
                             cursor: pointer;
-                            transition: transform 0.2s;
-                        " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                        ">
                             Fechar
                         </button>
                     </div>
@@ -508,18 +486,23 @@
             `;
         }
 
-        // Função de debug para ver o que está acontecendo
-        function debugSession() {
-            const sessions = localStorage.getItem('whatsapp_call_sessions');
-            const lastCall = localStorage.getItem('last_call_time');
-            alert(`Debug Info:\nSessões: ${sessions}\nÚltima chamada: ${lastCall}\nURL atual: ${window.location.href}`);
+        function clearDebug() {
+            localStorage.removeItem('videocall_blocked');
+            alert('Cache limpo! Recarregando...');
+            location.reload();
         }
 
         // Inicializar apenas se a sessão for válida
         function initializeCall() {
-            if (!checkSessionValidity()) {
-                return; // Para aqui se a sessão já foi usada
+            console.log('🚀 Iniciando verificação de sessão...');
+            
+            // VERIFICA PRIMEIRO SE JÁ FOI USADO
+            if (!checkAndBlockSession()) {
+                console.log('❌ Sessão bloqueada - parando inicialização');
+                return; // Para aqui se já foi usado
             }
+
+            console.log('✅ Sessão válida - continuando...');
 
             // Continue com a inicialização normal da chamada
             userVideo = document.getElementById('userVideo');
@@ -691,6 +674,11 @@
         }
 
         function endCall() {
+            console.log('📞 Chamada sendo encerrada...');
+            
+            // MARCA COMO USADO QUANDO DESLIGAR
+            blockSession();
+            
             if (userStream) {
                 userStream.getTracks().forEach(track => track.stop());
             }
