@@ -671,10 +671,15 @@
                         <div style="font-size: 64px; margin-bottom: 20px;">📞</div>
                         <h2 style="margin-bottom: 10px;">Chamada encerrada</h2>
                         <p style="opacity: 0.7;">Duração: ${document.getElementById('callTimer').textContent}</p>
-                        <button onclick="location.reload()" style="margin-top: 30px; padding: 12px 24px; background: #25D366; color: white; border: none; border-radius: 25px; font-size: 16px; cursor: pointer;">Ligar novamente</button>
+                        <button onclick="tryReload()" style="margin-top: 30px; padding: 12px 24px; background: #25D366; color: white; border: none; border-radius: 25px; font-size: 16px; cursor: pointer;">Ligar novamente</button>
                     </div>
                 `;
             }, 500);
+        }
+
+        // Função que tenta recarregar mas será bloqueada pelo sistema de sessão
+        function tryReload() {
+            location.reload();
         }
 
         function toggleFullscreen() {
