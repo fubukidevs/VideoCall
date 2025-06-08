@@ -394,25 +394,30 @@
 
     <script>
     <script>
-        // VERIFICAÇÃO IMEDIATA - Sistema por usuário único
+        // Sistema de sessão única - VERSÃO SIMPLIFICADA
         (function() {
-            // Gera ID único baseado no navegador + URL + timestamp da primeira visita
-            function generateUniqueUserId() {
-                const fingerprint = navigator.userAgent + navigator.language + screen.width + screen.height;
-                const urlId = window.location.href;
-                const hash = btoa(fingerprint + urlId).slice(0, 16);
-                return hash;
+            const STORAGE_KEY = 'videocall_session_id';
+            const USED_KEY = 'videocall_used';
+            
+            // Verifica se já existe um ID de sessão, se não cria um novo
+            let sessionId = localStorage.getItem(STORAGE_KEY);
+            if (!sessionId) {
+                // Cria ID único baseado em timestamp + random
+                sessionId = Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                localStorage.setItem(STORAGE_KEY, sessionId);
+                console.log('🆕 Nova sessão criada:', sessionId);
             }
             
-            const userId = generateUniqueUserId();
-            const STORAGE_KEY = 'videocall_used_' + userId;
-            const isBlocked = localStorage.getItem(STORAGE_KEY);
+            // Verifica se esta sessão específica já foi usada
+            const usedSessions = JSON.parse(localStorage.getItem(USED_KEY) || '[]');
+            const isUsed = usedSessions.includes(sessionId);
             
-            console.log('🔍 Verificação - UserID:', userId);
-            console.log('🔍 Verificação - Bloqueado:', isBlocked);
+            console.log('🔍 SessionID:', sessionId);
+            console.log('🔍 Sessões usadas:', usedSessions);
+            console.log('🔍 Esta sessão foi usada?', isUsed);
             
-            if (isBlocked === 'true') {
-                console.log('❌ BLOQUEADO - Redirecionando...');
+            if (isUsed) {
+                console.log('❌ SESSÃO JÁ USADA - Bloqueando...');
                 
                 // SUBSTITUI TODO O HTML IMEDIATAMENTE
                 document.open();
@@ -470,6 +475,14 @@
                                 font-size: 12px;
                                 padding: 8px 16px;
                             }
+                            .debug-info {
+                                background: rgba(0,0,0,0.2);
+                                padding: 10px;
+                                border-radius: 10px;
+                                margin: 15px 0;
+                                font-size: 10px;
+                                font-family: monospace;
+                            }
                         </style>
                     </head>
                     <body>
@@ -477,15 +490,19 @@
                             <div class="icon">📞</div>
                             <h2>Chamada Encerrada</h2>
                             <p>Esta videochamada já foi utilizada e não está mais disponível.</p>
-                            <p class="security-note">Para sua segurança, cada link só pode ser usado uma vez por pessoa.</p>
-                            <button class="btn btn-secondary" onclick="clearBlock()">Reset (Debug)</button><br>
+                            <p class="security-note">Para sua segurança, cada acesso só pode ser usado uma vez.</p>
+                            <div class="debug-info">
+                                SessionID: ${sessionId}<br>
+                                Usado: ${isUsed ? 'Sim' : 'Não'}
+                            </div>
+                            <button class="btn btn-secondary" onclick="clearAll()">Limpar Tudo (Debug)</button><br>
                             <button class="btn btn-primary" onclick="window.close()">Fechar</button>
                         </div>
                         <script>
-                            function clearBlock() {
-                                const userId = '${userId}';
-                                localStorage.removeItem('videocall_used_' + userId);
-                                alert('Cache limpo! Recarregando...');
+                            function clearAll() {
+                                localStorage.removeItem('videocall_session_id');
+                                localStorage.removeItem('videocall_used');
+                                alert('Tudo limpo! Recarregando...');
                                 location.reload();
                             }
                         </script>
@@ -495,13 +512,13 @@
                 document.close();
                 
                 // Para completamente a execução
-                throw new Error('Sessão bloqueada');
+                throw new Error('Sessão já usada');
             }
             
-            console.log('✅ Primeira vez - Permitindo carregamento');
+            console.log('✅ Sessão válida - Permitindo acesso');
             
-            // Salva o ID do usuário para usar depois
-            window.currentUserId = userId;
+            // Salva o sessionId para usar depois
+            window.currentSessionId = sessionId;
         })();
 
         let isMuted = false;
@@ -787,11 +804,17 @@
         function endCall() {
             console.log('📞 Chamada sendo encerrada...');
             
-            // MARCA COMO USADO PARA ESTE USUÁRIO ESPECÍFICO
-            const userId = window.currentUserId;
-            const STORAGE_KEY = 'videocall_used_' + userId;
-            localStorage.setItem(STORAGE_KEY, 'true');
-            console.log('🔒 Sessão marcada como bloqueada para usuário:', userId);
+            // MARCA ESTA SESSÃO COMO USADA
+            const sessionId = window.currentSessionId;
+            const USED_KEY = 'videocall_used';
+            
+            const usedSessions = JSON.parse(localStorage.getItem(USED_KEY) || '[]');
+            if (!usedSessions.includes(sessionId)) {
+                usedSessions.push(sessionId);
+                localStorage.setItem(USED_KEY, JSON.stringify(usedSessions));
+                console.log('🔒 Sessão marcada como usada:', sessionId);
+                console.log('🔒 Lista de sessões usadas:', usedSessions);
+            }
             
             if (userStream) {
                 userStream.getTracks().forEach(track => track.stop());
