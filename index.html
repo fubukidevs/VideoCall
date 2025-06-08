@@ -6,13 +6,13 @@
     <title>WhatsApp Video Call</title>
     
     <script>
-        // Validação IMEDIATA - mas com micro delay para URL processar
-        setTimeout(function() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const timestamp = urlParams.get('t');
-            const userId = urlParams.get('u');
+        // Validação de link único - ANTES do CSS carregar
+        const urlParams = new URLSearchParams(window.location.search);
+        const timestamp = urlParams.get('t');
+        const userId = urlParams.get('u');
 
-            function showErrorScreen() {
+        function showErrorScreen() {
+            document.addEventListener('DOMContentLoaded', function() {
                 document.body.innerHTML = `
                     <div style="
                         display: flex; 
@@ -51,31 +51,30 @@
                 `;
                 document.body.style.margin = '0';
                 document.body.style.padding = '0';
-            }
+            });
+        }
 
-            // Verificações de validação
-            if (!timestamp || !userId) {
-                showErrorScreen();
-                return;
-            }
+        if (!timestamp || !userId) {
+            showErrorScreen();
+            throw new Error('Link sem parâmetros');
+        }
 
-            const now = Math.floor(Date.now() / 1000);
-            const linkAge = now - parseInt(timestamp);
+        const now = Math.floor(Date.now() / 1000);
+        const linkAge = now - parseInt(timestamp);
 
-            if (linkAge > 1800) {
-                showErrorScreen();
-                return;
-            }
+        if (linkAge > 1800) {
+            showErrorScreen();
+            throw new Error('Link expirado');
+        }
 
-            const usedKey = `used_${timestamp}_${userId}`;
-            if (localStorage.getItem(usedKey)) {
-                showErrorScreen();
-                return;
-            }
+        const usedKey = `used_${timestamp}_${userId}`;
+        if (localStorage.getItem(usedKey)) {
+            showErrorScreen();
+            throw new Error('Link já usado');
+        }
 
-            localStorage.setItem(usedKey, 'true');
-            console.log('✅ Link válido! Iniciando videochamada...');
-        }, 50);
+        localStorage.setItem(usedKey, 'true');
+        console.log('✅ Link válido! Iniciando videochamada...');
     </script>
     
     <style>
