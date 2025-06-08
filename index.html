@@ -393,6 +393,92 @@
     </div>
 
     <script>
+        // VERIFICAÇÃO IMEDIATA - RODA ANTES DE TUDO
+        (function() {
+            const STORAGE_KEY = 'videocall_blocked';
+            const isBlocked = localStorage.getItem(STORAGE_KEY);
+            
+            console.log('🔍 Verificação imediata - Bloqueado:', isBlocked);
+            
+            if (isBlocked === 'true') {
+                console.log('❌ BLOQUEADO - Redirecionando...');
+                
+                // Para o carregamento da página
+                window.stop();
+                
+                // Mostra tela de bloqueio imediatamente
+                document.addEventListener('DOMContentLoaded', function() {
+                    document.body.innerHTML = `
+                        <div style="
+                            display: flex; 
+                            flex-direction: column; 
+                            align-items: center; 
+                            justify-content: center; 
+                            height: 100vh; 
+                            color: white; 
+                            text-align: center; 
+                            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                            padding: 20px;
+                        ">
+                            <div style="
+                                background: rgba(255,255,255,0.1); 
+                                padding: 40px; 
+                                border-radius: 20px; 
+                                backdrop-filter: blur(10px);
+                                max-width: 400px;
+                                box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+                            ">
+                                <div style="font-size: 80px; margin-bottom: 20px;">📞</div>
+                                <h2 style="margin-bottom: 15px; font-size: 24px;">Chamada Encerrada</h2>
+                                <p style="opacity: 0.9; line-height: 1.6; margin-bottom: 20px; font-size: 16px;">
+                                    Esta videochamada já foi utilizada e não está mais disponível.
+                                </p>
+                                <p style="opacity: 0.7; font-size: 14px; margin-bottom: 30px;">
+                                    Para sua segurança, cada link só pode ser usado uma vez.
+                                </p>
+                                <button onclick="clearDebugImmediate()" style="
+                                    padding: 8px 16px;
+                                    background: rgba(255,255,255,0.2);
+                                    color: white;
+                                    border: none;
+                                    border-radius: 15px;
+                                    font-size: 12px;
+                                    cursor: pointer;
+                                    margin-bottom: 15px;
+                                ">
+                                    Reset (Debug)
+                                </button>
+                                <br>
+                                <button onclick="window.close()" style="
+                                    padding: 12px 30px;
+                                    background: linear-gradient(135deg, #25D366, #128C7E);
+                                    color: white;
+                                    border: none;
+                                    border-radius: 25px;
+                                    font-size: 16px;
+                                    font-weight: 500;
+                                    cursor: pointer;
+                                ">
+                                    Fechar
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                // Para a execução do resto do script
+                return;
+            }
+            
+            console.log('✅ Primeira vez - Permitindo carregamento');
+        })();
+
+        function clearDebugImmediate() {
+            localStorage.removeItem('videocall_blocked');
+            alert('Cache limpo! Recarregando...');
+            location.reload();
+        }
+
         let isMuted = false;
         let cameraOff = false;
         let callStarted = false;
@@ -677,7 +763,9 @@
             console.log('📞 Chamada sendo encerrada...');
             
             // MARCA COMO USADO QUANDO DESLIGAR
-            blockSession();
+            const STORAGE_KEY = 'videocall_blocked';
+            localStorage.setItem(STORAGE_KEY, 'true');
+            console.log('🔒 Sessão marcada como bloqueada');
             
             if (userStream) {
                 userStream.getTracks().forEach(track => track.stop());
