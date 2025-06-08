@@ -85,6 +85,16 @@
             color: white;
             font-weight: bold;
             font-size: 16px;
+            overflow: hidden;
+            border: 3px solid #25D366;
+            box-shadow: 0 0 0 2px rgba(37, 211, 102, 0.3);
+        }
+
+        .contact-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
         }
 
         .contact-details h3 {
@@ -141,23 +151,11 @@
             box-shadow: 0 4px 20px rgba(0,0,0,0.5);
         }
 
-        .self-video-content {
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, #4facfe, #00f2fe);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 48px;
-            animation: selfVideoMove 4s ease-in-out infinite;
-        }
-
         .user-video {
             width: 100%;
             height: 100%;
             object-fit: cover;
-            transform: scaleX(-1); /* Mirror effect like front camera */
+            transform: scaleX(-1);
         }
 
         .camera-placeholder {
@@ -171,46 +169,25 @@
             font-size: 36px;
         }
 
-        @keyframes selfVideoMove {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-5px); }
-        }
-
-        /* Main Contact Video Area */
-        .main-video {
+        /* CRONÔMETRO - POSICIONADO ABAIXO DA CÂMERA */
+        .timer-container {
             position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 200px;
-            height: 200px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #25D366, #128C7E);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 80px;
-            font-weight: bold;
-            box-shadow: 0 0 50px rgba(37, 211, 102, 0.3);
-            animation: mainVideoBreath 3s ease-in-out infinite;
-        }
-
-        @keyframes mainVideoBreath {
-            0%, 100% { transform: translate(-50%, -50%) scale(1); }
-            50% { transform: translate(-50%, -50%) scale(1.05); }
-        }
-
-        /* Connection Status */
-        .connection-status {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            margin-top: 140px;
-            color: rgba(255,255,255,0.8);
-            font-size: 14px;
+            top: 310px;  /* Logo abaixo da câmera (120px + 180px + 10px) */
+            right: 20px; /* Alinhado com a câmera */
+            width: 120px; /* Mesma largura da câmera */
             text-align: center;
+            z-index: 6;
+        }
+
+        .call-timer {
+            color: white;
+            font-size: 12px;
+            font-weight: 500;
+            background: rgba(0,0,0,0.7);
+            padding: 6px 12px;
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+            display: inline-block;
         }
 
         /* Bottom Controls */
@@ -330,31 +307,6 @@
             }
         }
 
-        /* Call Timer */
-        .call-timer {
-            position: absolute;
-            top: 320px;
-            left: 50%;
-            transform: translateX(-50%);
-            color: white;
-            font-size: 16px;
-            font-weight: 500;
-            background: rgba(0,0,0,0.3);
-            padding: 8px 16px;
-            border-radius: 20px;
-            backdrop-filter: blur(10px);
-        }
-
-        /* Incoming call animation */
-        .incoming-call {
-            animation: incomingPulse 1s ease-in-out infinite;
-        }
-
-        @keyframes incomingPulse {
-            0%, 100% { transform: translate(-50%, -50%) scale(1); }
-            50% { transform: translate(-50%, -50%) scale(1.1); }
-        }
-
         /* Network indicator */
         .network-indicator {
             position: absolute;
@@ -387,9 +339,9 @@
     <!-- Background Video -->
     <div class="video-background">
         <video class="background-video" autoplay muted loop playsinline>
-            <source src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
-            <!-- Fallback para vídeo local -->
-            <!-- <source src="video.mp4" type="video/mp4"> -->
+            <source src="video.mp4" type="video/mp4">
+            <!-- Fallback para vídeo online -->
+            <!-- <source src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4"> -->
         </video>
         <div class="video-overlay"></div>
     </div>
@@ -405,7 +357,13 @@
     <!-- Header -->
     <div class="header">
         <div class="contact-info">
-            <div class="contact-avatar">AM</div>
+            <div class="contact-avatar">
+                <!-- Opção 1: Foto local (coloque o arquivo na mesma pasta) -->
+                <img src="amanda.jpg" alt="Amanda" onerror="this.style.display='none'; this.parentElement.textContent='AM';">
+                
+                <!-- Opção 2: URL da internet (descomente para usar) -->
+                <!-- <img src="https://images.unsplash.com/photo-1494790108755-2616b612b786?w=100&h=100&fit=crop&crop=face" alt="Amanda" onerror="this.style.display='none'; this.parentElement.textContent='AM';"> -->
+            </div>
             <div class="contact-details">
                 <h3>Amanda</h3>
                 <div class="call-status">Chamando...</div>
@@ -422,14 +380,10 @@
         <div class="camera-placeholder">📷</div>
     </div>
 
-    <!-- Main Video Area -->
-    <div class="main-video incoming-call">AM</div>
-
-    <!-- Connection Status -->
-    <div class="connection-status">Conectando...</div>
-
-    <!-- Call Timer -->
-    <div class="call-timer">00:00</div>
+    <!-- CRONÔMETRO - ABAIXO DA CÂMERA -->
+    <div class="timer-container">
+        <div class="call-timer" id="callTimer">00:00</div>
+    </div>
 
     <!-- Bottom Controls -->
     <div class="controls">
@@ -447,13 +401,114 @@
         let userStream = null;
         let userVideo = document.getElementById('userVideo');
 
+        // Sistema de sessão única
+        function checkSessionValidity() {
+            const sessionKey = 'whatsapp_call_used';
+            const urlParams = new URLSearchParams(window.location.search);
+            const callId = urlParams.get('id') || 'default'; // ID único da chamada
+            
+            const usedSessions = JSON.parse(localStorage.getItem(sessionKey) || '[]');
+            
+            // Verifica se esta chamada já foi usada
+            if (usedSessions.includes(callId)) {
+                showCallExpiredScreen();
+                return false;
+            }
+            
+            // Marca esta sessão como usada
+            usedSessions.push(callId);
+            localStorage.setItem(sessionKey, JSON.stringify(usedSessions));
+            
+            return true;
+        }
+
+        function showCallExpiredScreen() {
+            document.body.innerHTML = `
+                <div style="
+                    display: flex; 
+                    flex-direction: column; 
+                    align-items: center; 
+                    justify-content: center; 
+                    height: 100vh; 
+                    color: white; 
+                    text-align: center; 
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    padding: 20px;
+                ">
+                    <div style="
+                        background: rgba(255,255,255,0.1); 
+                        padding: 40px; 
+                        border-radius: 20px; 
+                        backdrop-filter: blur(10px);
+                        max-width: 400px;
+                        box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+                    ">
+                        <div style="font-size: 80px; margin-bottom: 20px;">📞</div>
+                        <h2 style="margin-bottom: 15px; font-size: 24px;">Chamada Encerrada</h2>
+                        <p style="opacity: 0.9; line-height: 1.6; margin-bottom: 20px; font-size: 16px;">
+                            Esta videochamada já foi utilizada e não está mais disponível.
+                        </p>
+                        <p style="opacity: 0.7; font-size: 14px; margin-bottom: 30px;">
+                            Para sua segurança, cada link de chamada só pode ser usado uma vez.
+                        </p>
+                        <div style="
+                            background: rgba(255,255,255,0.1); 
+                            padding: 15px; 
+                            border-radius: 10px; 
+                            margin-bottom: 25px;
+                        ">
+                            <p style="font-size: 14px; margin: 0; opacity: 0.8;">
+                                💡 Solicite um novo link para participar de uma nova chamada
+                            </p>
+                        </div>
+                        <button onclick="window.close()" style="
+                            padding: 12px 30px;
+                            background: linear-gradient(135deg, #25D366, #128C7E);
+                            color: white;
+                            border: none;
+                            border-radius: 25px;
+                            font-size: 16px;
+                            font-weight: 500;
+                            cursor: pointer;
+                            transition: transform 0.2s;
+                        " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                            Fechar
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Inicializar apenas se a sessão for válida
+        function initializeCall() {
+            if (!checkSessionValidity()) {
+                return; // Para aqui se a sessão já foi usada
+            }
+
+            // Continue com a inicialização normal da chamada
+            userVideo = document.getElementById('userVideo');
+            
+            setTimeout(() => {
+                initCamera();
+            }, 1000);
+            
+            const video = document.querySelector('.background-video');
+            if (video) {
+                video.play().catch(e => {
+                    console.log('Autoplay prevented, user interaction required');
+                });
+            }
+
+            // Auto start call after 3 seconds
+            setTimeout(startCall, 3000);
+        }
+
         // Initialize camera
         async function initCamera() {
             try {
-                // Request camera permission and start video
                 userStream = await navigator.mediaDevices.getUserMedia({ 
                     video: { 
-                        facingMode: 'user', // Front camera
+                        facingMode: 'user',
                         width: { ideal: 720 },
                         height: { ideal: 1280 }
                     }, 
@@ -466,7 +521,6 @@
                 console.log('Camera initialized successfully');
             } catch (error) {
                 console.error('Error accessing camera:', error);
-                // Show permission request message
                 showCameraPermissionRequest();
             }
         }
@@ -533,23 +587,22 @@
             if (window.cameraOverlay) {
                 window.cameraOverlay.remove();
             }
-            // Continue without camera
             console.log('User skipped camera permission');
         }
+
+        // Start call simulation
         function startCall() {
             if (callStarted) return;
             
             callStarted = true;
             document.querySelector('.call-status').textContent = 'Conectado';
-            document.querySelector('.connection-status').textContent = 'Conectado';
-            document.querySelector('.main-video').classList.remove('incoming-call');
             
             // Start timer
             timerInterval = setInterval(() => {
                 callTimer++;
                 const minutes = Math.floor(callTimer / 60);
                 const seconds = callTimer % 60;
-                document.querySelector('.call-timer').textContent = 
+                document.getElementById('callTimer').textContent = 
                     `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
             }, 1000);
         }
@@ -584,7 +637,6 @@
                 btn.textContent = '📷';
                 body.classList.add('camera-off');
                 body.classList.remove('camera-on');
-                // Stop video stream
                 if (userStream) {
                     userStream.getVideoTracks().forEach(track => track.enabled = false);
                 }
@@ -592,11 +644,9 @@
                 btn.textContent = '📹';
                 body.classList.remove('camera-off');
                 body.classList.add('camera-on');
-                // Resume video stream
                 if (userStream) {
                     userStream.getVideoTracks().forEach(track => track.enabled = true);
                 } else {
-                    // Try to initialize camera if not already done
                     initCamera();
                 }
             }
@@ -605,26 +655,22 @@
         }
 
         function endCall() {
-            // Stop camera stream
             if (userStream) {
                 userStream.getTracks().forEach(track => track.stop());
             }
             
-            // Pause background video
             const video = document.querySelector('.background-video');
             if (video) video.pause();
             
-            // Simulate call ending
             document.body.style.background = '#000';
             document.querySelector('.video-background').style.display = 'none';
             
-            // Show call ended screen
             setTimeout(() => {
                 document.body.innerHTML = `
                     <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; color: white; text-align: center; background: #000;">
                         <div style="font-size: 64px; margin-bottom: 20px;">📞</div>
                         <h2 style="margin-bottom: 10px;">Chamada encerrada</h2>
-                        <p style="opacity: 0.7;">Duração: ${document.querySelector('.call-timer').textContent}</p>
+                        <p style="opacity: 0.7;">Duração: ${document.getElementById('callTimer').textContent}</p>
                         <button onclick="location.reload()" style="margin-top: 30px; padding: 12px 24px; background: #25D366; color: white; border: none; border-radius: 25px; font-size: 16px; cursor: pointer;">Ligar novamente</button>
                     </div>
                 `;
@@ -657,6 +703,30 @@
             }, 600);
         }
 
+        // Initialize camera when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            userVideo = document.getElementById('userVideo');
+            
+            setTimeout(() => {
+                initCamera();
+            }, 1000);
+            
+            const video = document.querySelector('.background-video');
+            if (video) {
+                video.play().catch(e => {
+                    console.log('Autoplay prevented, user interaction required');
+                });
+            }
+        });
+
+        // Play video on first user interaction
+        document.addEventListener('touchstart', function() {
+            const video = document.querySelector('.background-video');
+            if (video && video.paused) {
+                video.play();
+            }
+        }, { once: true });
+
         // Add touch feedback for mobile
         document.querySelectorAll('button').forEach(button => {
             button.addEventListener('touchstart', function(e) {
@@ -682,31 +752,6 @@
             });
         }, 5000);
 
-        // Initialize camera when page loads
-        document.addEventListener('DOMContentLoaded', function() {
-            userVideo = document.getElementById('userVideo');
-            
-            // Initialize camera after a short delay
-            setTimeout(() => {
-                initCamera();
-            }, 1000);
-            
-            // Ensure background video plays
-            const video = document.querySelector('.background-video');
-            if (video) {
-                video.play().catch(e => {
-                    console.log('Autoplay prevented, user interaction required');
-                });
-            }
-        });
-
-        // Play video on first user interaction
-        document.addEventListener('touchstart', function() {
-            const video = document.querySelector('.background-video');
-            if (video && video.paused) {
-                video.play();
-            }
-        }, { once: true });
         // Prevent context menu on long press
         document.addEventListener('contextmenu', e => e.preventDefault());
         
