@@ -401,28 +401,44 @@
         let userStream = null;
         let userVideo = document.getElementById('userVideo');
 
-        // Sistema de sessão única
+        // Sistema de sessão única - VERSÃO CORRIGIDA
         function checkSessionValidity() {
-            const sessionKey = 'whatsapp_call_used';
+            const sessionKey = 'whatsapp_call_sessions';
             const urlParams = new URLSearchParams(window.location.search);
-            const callId = urlParams.get('id') || 'default'; // ID único da chamada
+            const callId = urlParams.get('id') || window.location.href; // Usa URL completa se não tiver ID
             
-            const usedSessions = JSON.parse(localStorage.getItem(sessionKey) || '[]');
-            
-            // Verifica se esta chamada já foi usada
-            if (usedSessions.includes(callId)) {
-                showCallExpiredScreen();
-                return false;
+            try {
+                // Tenta recuperar sessões usadas
+                const usedSessions = JSON.parse(localStorage.getItem(sessionKey) || '[]');
+                
+                console.log('Verificando sessão:', callId);
+                console.log('Sessões usadas:', usedSessions);
+                
+                // Verifica se esta chamada já foi usada
+                if (usedSessions.includes(callId)) {
+                    console.log('Sessão já foi usada - BLOQUEANDO');
+                    showCallExpiredScreen();
+                    return false;
+                }
+                
+                // Marca esta sessão como usada
+                usedSessions.push(callId);
+                localStorage.setItem(sessionKey, JSON.stringify(usedSessions));
+                console.log('Sessão marcada como usada:', callId);
+                
+                // Marca também com timestamp para debug
+                localStorage.setItem('last_call_time', new Date().toISOString());
+                
+                return true;
+            } catch (error) {
+                console.error('Erro no sistema de sessão:', error);
+                // Se der erro, permite acesso (fallback)
+                return true;
             }
-            
-            // Marca esta sessão como usada
-            usedSessions.push(callId);
-            localStorage.setItem(sessionKey, JSON.stringify(usedSessions));
-            
-            return true;
         }
 
         function showCallExpiredScreen() {
+            console.log('Mostrando tela de sessão expirada');
             document.body.innerHTML = `
                 <div style="
                     display: flex; 
@@ -461,6 +477,19 @@
                                 💡 Solicite um novo link para participar de uma nova chamada
                             </p>
                         </div>
+                        <button onclick="debugSession()" style="
+                            padding: 8px 16px;
+                            background: rgba(255,255,255,0.2);
+                            color: white;
+                            border: none;
+                            border-radius: 15px;
+                            font-size: 12px;
+                            cursor: pointer;
+                            margin-bottom: 15px;
+                        ">
+                            Debug Info
+                        </button>
+                        <br>
                         <button onclick="window.close()" style="
                             padding: 12px 30px;
                             background: linear-gradient(135deg, #25D366, #128C7E);
@@ -477,6 +506,13 @@
                     </div>
                 </div>
             `;
+        }
+
+        // Função de debug para ver o que está acontecendo
+        function debugSession() {
+            const sessions = localStorage.getItem('whatsapp_call_sessions');
+            const lastCall = localStorage.getItem('last_call_time');
+            alert(`Debug Info:\nSessões: ${sessions}\nÚltima chamada: ${lastCall}\nURL atual: ${window.location.href}`);
         }
 
         // Inicializar apenas se a sessão for válida
