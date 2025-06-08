@@ -393,6 +393,7 @@
     </div>
 
     <script>
+    <script>
         // VERIFICAÇÃO IMEDIATA - RODA ANTES DE TUDO
         (function() {
             const STORAGE_KEY = 'videocall_blocked';
@@ -403,12 +404,17 @@
             if (isBlocked === 'true') {
                 console.log('❌ BLOQUEADO - Redirecionando...');
                 
-                // Para o carregamento da página
-                window.stop();
-                
-                // Mostra tela de bloqueio imediatamente
-                document.addEventListener('DOMContentLoaded', function() {
-                    document.body.innerHTML = `
+                // SUBSTITUI TODO O HTML IMEDIATAMENTE
+                document.open();
+                document.write(`
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <meta charset="UTF-8">
+                        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                        <title>Chamada Encerrada</title>
+                    </head>
+                    <body style="margin:0; padding:0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
                         <div style="
                             display: flex; 
                             flex-direction: column; 
@@ -436,7 +442,7 @@
                                 <p style="opacity: 0.7; font-size: 14px; margin-bottom: 30px;">
                                     Para sua segurança, cada link só pode ser usado uma vez.
                                 </p>
-                                <button onclick="clearDebugImmediate()" style="
+                                <button onclick="clearBlock()" style="
                                     padding: 8px 16px;
                                     background: rgba(255,255,255,0.2);
                                     color: white;
@@ -463,21 +469,24 @@
                                 </button>
                             </div>
                         </div>
-                    `;
-                });
+                        <script>
+                            function clearBlock() {
+                                localStorage.removeItem('videocall_blocked');
+                                alert('Cache limpo! Recarregando...');
+                                location.reload();
+                            }
+                        </script>
+                    </body>
+                    </html>
+                `);
+                document.close();
                 
-                // Para a execução do resto do script
-                return;
+                // Para completamente a execução
+                throw new Error('Sessão bloqueada');
             }
             
             console.log('✅ Primeira vez - Permitindo carregamento');
         })();
-
-        function clearDebugImmediate() {
-            localStorage.removeItem('videocall_blocked');
-            alert('Cache limpo! Recarregando...');
-            location.reload();
-        }
 
         let isMuted = false;
         let cameraOff = false;
