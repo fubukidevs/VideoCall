@@ -393,134 +393,33 @@
     </div>
 
     <script>
-    <script>
-        // Sistema de sessão única - VERSÃO SIMPLIFICADA
-        (function() {
-            const STORAGE_KEY = 'videocall_session_id';
-            const USED_KEY = 'videocall_used';
-            
-            // Verifica se já existe um ID de sessão, se não cria um novo
-            let sessionId = localStorage.getItem(STORAGE_KEY);
-            if (!sessionId) {
-                // Cria ID único baseado em timestamp + random
-                sessionId = Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-                localStorage.setItem(STORAGE_KEY, sessionId);
-                console.log('🆕 Nova sessão criada:', sessionId);
-            }
-            
-            // Verifica se esta sessão específica já foi usada
-            const usedSessions = JSON.parse(localStorage.getItem(USED_KEY) || '[]');
-            const isUsed = usedSessions.includes(sessionId);
-            
-            console.log('🔍 SessionID:', sessionId);
-            console.log('🔍 Sessões usadas:', usedSessions);
-            console.log('🔍 Esta sessão foi usada?', isUsed);
-            
-            if (isUsed) {
-                console.log('❌ SESSÃO JÁ USADA - Bloqueando...');
-                
-                // SUBSTITUI TODO O HTML IMEDIATAMENTE
-                document.open();
-                document.write(`
-                    <!DOCTYPE html>
-                    <html>
-                    <head>
-                        <meta charset="UTF-8">
-                        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                        <title>Chamada Encerrada</title>
-                        <style>
-                            * { margin: 0; padding: 0; box-sizing: border-box; }
-                            body { 
-                                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                                min-height: 100vh;
-                                display: flex;
-                                align-items: center;
-                                justify-content: center;
-                                padding: 20px;
-                            }
-                            .container {
-                                background: rgba(255,255,255,0.1);
-                                padding: 30px 20px;
-                                border-radius: 20px;
-                                backdrop-filter: blur(10px);
-                                max-width: 350px;
-                                width: 100%;
-                                box-shadow: 0 8px 32px rgba(0,0,0,0.3);
-                                text-align: center;
-                                color: white;
-                            }
-                            .icon { font-size: 60px; margin-bottom: 20px; }
-                            h2 { font-size: 22px; margin-bottom: 15px; font-weight: 600; }
-                            p { opacity: 0.9; line-height: 1.5; margin-bottom: 15px; font-size: 14px; }
-                            .security-note { opacity: 0.7; font-size: 12px; margin-bottom: 25px; }
-                            .btn {
-                                padding: 12px 24px;
-                                border: none;
-                                border-radius: 25px;
-                                font-size: 14px;
-                                font-weight: 500;
-                                cursor: pointer;
-                                transition: transform 0.2s;
-                                margin: 5px;
-                            }
-                            .btn:active { transform: scale(0.95); }
-                            .btn-primary {
-                                background: linear-gradient(135deg, #25D366, #128C7E);
-                                color: white;
-                            }
-                            .btn-secondary {
-                                background: rgba(255,255,255,0.2);
-                                color: white;
-                                font-size: 12px;
-                                padding: 8px 16px;
-                            }
-                            .debug-info {
-                                background: rgba(0,0,0,0.2);
-                                padding: 10px;
-                                border-radius: 10px;
-                                margin: 15px 0;
-                                font-size: 10px;
-                                font-family: monospace;
-                            }
-                        </style>
-                    </head>
-                    <body>
-                        <div class="container">
-                            <div class="icon">📞</div>
-                            <h2>Chamada Encerrada</h2>
-                            <p>Esta videochamada já foi utilizada e não está mais disponível.</p>
-                            <p class="security-note">Para sua segurança, cada acesso só pode ser usado uma vez.</p>
-                            <div class="debug-info">
-                                SessionID: ${sessionId}<br>
-                                Usado: ${isUsed ? 'Sim' : 'Não'}
-                            </div>
-                            <button class="btn btn-secondary" onclick="clearAll()">Limpar Tudo (Debug)</button><br>
-                            <button class="btn btn-primary" onclick="window.close()">Fechar</button>
-                        </div>
-                        <script>
-                            function clearAll() {
-                                localStorage.removeItem('videocall_session_id');
-                                localStorage.removeItem('videocall_used');
-                                alert('Tudo limpo! Recarregando...');
-                                location.reload();
-                            }
-                        </script>
-                    </body>
-                    </html>
-                `);
-                document.close();
-                
-                // Para completamente a execução
-                throw new Error('Sessão já usada');
-            }
-            
-            console.log('✅ Sessão válida - Permitindo acesso');
-            
-            // Salva o sessionId para usar depois
-            window.currentSessionId = sessionId;
-        })();
+        // Validação de link único
+        const urlParams = new URLSearchParams(window.location.search);
+        const timestamp = urlParams.get('t');
+        const userId = urlParams.get('u');
 
+        if (!timestamp || !userId) {
+            document.body.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100vh; background: #000; color: white; text-align: center; font-family: Arial;"><div><h1>❌ Link inválido!</h1><p>Este link não é válido ou foi corrompido.</p></div></div>';
+            throw new Error('Link sem parâmetros');
+        }
+
+        const now = Math.floor(Date.now() / 1000);
+        const linkAge = now - parseInt(timestamp);
+
+        if (linkAge > 1800) {
+            document.body.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100vh; background: #000; color: white; text-align: center; font-family: Arial;"><div><h1>⏰ Link expirado!</h1><p>Este link expirou. Solicite um novo link.</p></div></div>';
+            throw new Error('Link expirado');
+        }
+
+        const usedKey = `used_${timestamp}_${userId}`;
+        if (localStorage.getItem(usedKey)) {
+            document.body.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100vh; background: #000; color: white; text-align: center; font-family: Arial;"><div><h1>🚫 Link já utilizado!</h1><p>Este link já foi usado anteriormente.</p></div></div>';
+            throw new Error('Link já usado');
+        }
+
+        localStorage.setItem(usedKey, 'true');
+        console.log('✅ Link válido! Iniciando videochamada...');
+    </script>
         let isMuted = false;
         let cameraOff = false;
         let callStarted = false;
@@ -528,127 +427,6 @@
         let timerInterval;
         let userStream = null;
         let userVideo = document.getElementById('userVideo');
-
-        // Sistema de sessão única - VERSÃO MAIS SIMPLES
-        function checkAndBlockSession() {
-            const STORAGE_KEY = 'videocall_blocked';
-            const currentUrl = window.location.href;
-            
-            console.log('🔍 Verificando sessão para:', currentUrl);
-            
-            // Verifica se já foi usado
-            const isBlocked = localStorage.getItem(STORAGE_KEY);
-            
-            if (isBlocked === 'true') {
-                console.log('❌ SESSÃO BLOQUEADA - Mostrando tela de erro');
-                showBlockedScreen();
-                return false;
-            }
-            
-            console.log('✅ Primeira vez - Permitindo acesso');
-            return true;
-        }
-
-        function blockSession() {
-            const STORAGE_KEY = 'videocall_blocked';
-            localStorage.setItem(STORAGE_KEY, 'true');
-            console.log('🔒 Sessão marcada como bloqueada');
-        }
-
-        function showBlockedScreen() {
-            document.body.innerHTML = `
-                <div style="
-                    display: flex; 
-                    flex-direction: column; 
-                    align-items: center; 
-                    justify-content: center; 
-                    height: 100vh; 
-                    color: white; 
-                    text-align: center; 
-                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                    padding: 20px;
-                ">
-                    <div style="
-                        background: rgba(255,255,255,0.1); 
-                        padding: 40px; 
-                        border-radius: 20px; 
-                        backdrop-filter: blur(10px);
-                        max-width: 400px;
-                        box-shadow: 0 8px 32px rgba(0,0,0,0.3);
-                    ">
-                        <div style="font-size: 80px; margin-bottom: 20px;">📞</div>
-                        <h2 style="margin-bottom: 15px; font-size: 24px;">Chamada Encerrada</h2>
-                        <p style="opacity: 0.9; line-height: 1.6; margin-bottom: 20px; font-size: 16px;">
-                            Esta videochamada já foi utilizada e não está mais disponível.
-                        </p>
-                        <p style="opacity: 0.7; font-size: 14px; margin-bottom: 30px;">
-                            Para sua segurança, cada link só pode ser usado uma vez.
-                        </p>
-                        <button onclick="clearDebug()" style="
-                            padding: 8px 16px;
-                            background: rgba(255,255,255,0.2);
-                            color: white;
-                            border: none;
-                            border-radius: 15px;
-                            font-size: 12px;
-                            cursor: pointer;
-                            margin-bottom: 15px;
-                        ">
-                            Reset (Debug)
-                        </button>
-                        <br>
-                        <button onclick="window.close()" style="
-                            padding: 12px 30px;
-                            background: linear-gradient(135deg, #25D366, #128C7E);
-                            color: white;
-                            border: none;
-                            border-radius: 25px;
-                            font-size: 16px;
-                            font-weight: 500;
-                            cursor: pointer;
-                        ">
-                            Fechar
-                        </button>
-                    </div>
-                </div>
-            `;
-        }
-
-        function clearDebug() {
-            localStorage.removeItem('videocall_blocked');
-            alert('Cache limpo! Recarregando...');
-            location.reload();
-        }
-
-        // Inicializar apenas se a sessão for válida
-        function initializeCall() {
-            console.log('🚀 Iniciando verificação de sessão...');
-            
-            // VERIFICA PRIMEIRO SE JÁ FOI USADO
-            if (!checkAndBlockSession()) {
-                console.log('❌ Sessão bloqueada - parando inicialização');
-                return; // Para aqui se já foi usado
-            }
-
-            console.log('✅ Sessão válida - continuando...');
-
-            // Continue com a inicialização normal da chamada
-            userVideo = document.getElementById('userVideo');
-            
-            setTimeout(() => {
-                initCamera();
-            }, 1000);
-            
-            const video = document.querySelector('.background-video');
-            if (video) {
-                video.play().catch(e => {
-                    console.log('Autoplay prevented, user interaction required');
-                });
-            }
-
-            // Auto start call after 3 seconds
-            setTimeout(startCall, 3000);
-        }
 
         // Initialize camera
         async function initCamera() {
@@ -802,20 +580,6 @@
         }
 
         function endCall() {
-            console.log('📞 Chamada sendo encerrada...');
-            
-            // MARCA ESTA SESSÃO COMO USADA
-            const sessionId = window.currentSessionId;
-            const USED_KEY = 'videocall_used';
-            
-            const usedSessions = JSON.parse(localStorage.getItem(USED_KEY) || '[]');
-            if (!usedSessions.includes(sessionId)) {
-                usedSessions.push(sessionId);
-                localStorage.setItem(USED_KEY, JSON.stringify(usedSessions));
-                console.log('🔒 Sessão marcada como usada:', sessionId);
-                console.log('🔒 Lista de sessões usadas:', usedSessions);
-            }
-            
             if (userStream) {
                 userStream.getTracks().forEach(track => track.stop());
             }
@@ -832,15 +596,10 @@
                         <div style="font-size: 64px; margin-bottom: 20px;">📞</div>
                         <h2 style="margin-bottom: 10px;">Chamada encerrada</h2>
                         <p style="opacity: 0.7;">Duração: ${document.getElementById('callTimer').textContent}</p>
-                        <button onclick="tryReload()" style="margin-top: 30px; padding: 12px 24px; background: #25D366; color: white; border: none; border-radius: 25px; font-size: 16px; cursor: pointer;">Ligar novamente</button>
+                        <button onclick="location.reload()" style="margin-top: 30px; padding: 12px 24px; background: #25D366; color: white; border: none; border-radius: 25px; font-size: 16px; cursor: pointer;">Ligar novamente</button>
                     </div>
                 `;
             }, 500);
-        }
-
-        // Função que tenta recarregar mas será bloqueada pelo sistema de sessão
-        function tryReload() {
-            location.reload();
         }
 
         function toggleFullscreen() {
