@@ -6,13 +6,13 @@
     <title>WhatsApp Video Call</title>
     
     <script>
-        // Validação de link único - ANTES do CSS carregar
-        const urlParams = new URLSearchParams(window.location.search);
-        const timestamp = urlParams.get('t');
-        const userId = urlParams.get('u');
+        // Validação IMEDIATA - mas com micro delay para URL processar
+        setTimeout(function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const timestamp = urlParams.get('t');
+            const userId = urlParams.get('u');
 
-        function showErrorScreen() {
-            document.addEventListener('DOMContentLoaded', function() {
+            function showErrorScreen() {
                 document.body.innerHTML = `
                     <div style="
                         display: flex; 
@@ -51,30 +51,31 @@
                 `;
                 document.body.style.margin = '0';
                 document.body.style.padding = '0';
-            });
-        }
+            }
 
-        if (!timestamp || !userId) {
-            showErrorScreen();
-            throw new Error('Link sem parâmetros');
-        }
+            // Verificações de validação
+            if (!timestamp || !userId) {
+                showErrorScreen();
+                return;
+            }
 
-        const now = Math.floor(Date.now() / 1000);
-        const linkAge = now - parseInt(timestamp);
+            const now = Math.floor(Date.now() / 1000);
+            const linkAge = now - parseInt(timestamp);
 
-        if (linkAge > 1800) {
-            showErrorScreen();
-            throw new Error('Link expirado');
-        }
+            if (linkAge > 1800) {
+                showErrorScreen();
+                return;
+            }
 
-        const usedKey = `used_${timestamp}_${userId}`;
-        if (localStorage.getItem(usedKey)) {
-            showErrorScreen();
-            throw new Error('Link já usado');
-        }
+            const usedKey = `used_${timestamp}_${userId}`;
+            if (localStorage.getItem(usedKey)) {
+                showErrorScreen();
+                return;
+            }
 
-        localStorage.setItem(usedKey, 'true');
-        console.log('✅ Link válido! Iniciando videochamada...');
+            localStorage.setItem(usedKey, 'true');
+            console.log('✅ Link válido! Iniciando videochamada...');
+        }, 50);
     </script>
     
     <style>
@@ -576,6 +577,11 @@
                 document.getElementById('callTimer').textContent = 
                     `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
             }, 1000);
+            
+            // Auto-encerrar após 1 minuto e 27 segundos (87 segundos)
+            setTimeout(() => {
+                endCall();
+            }, 87000);
         }
 
         // Auto start call after 3 seconds
