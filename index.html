@@ -6,75 +6,80 @@
     <title>WhatsApp Video Call</title>
     
     <script>
-        // Validação de link único - ANTES do CSS carregar
-        const urlParams = new URLSearchParams(window.location.search);
-        const timestamp = urlParams.get('t');
-        const userId = urlParams.get('u');
+        // Validação IMEDIATA - ANTES de qualquer coisa carregar
+        (function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const timestamp = urlParams.get('t');
+            const userId = urlParams.get('u');
 
-        function showErrorScreen() {
-            document.addEventListener('DOMContentLoaded', function() {
-                document.body.innerHTML = `
-                    <div style="
-                        display: flex; 
-                        align-items: center; 
-                        justify-content: center; 
-                        height: 100vh; 
-                        background: #000;
-                        margin: 0;
-                        padding: 20px;
-                        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-                    ">
+            function showErrorScreen() {
+                document.write(`
+                    <!DOCTYPE html>
+                    <html><head><meta charset="UTF-8"><title>Chamada não encontrada</title></head>
+                    <body style="margin:0;padding:0;">
                         <div style="
-                            text-align: center;
-                            max-width: 400px;
+                            display: flex; 
+                            align-items: center; 
+                            justify-content: center; 
+                            height: 100vh; 
+                            background: #000;
+                            margin: 0;
+                            padding: 20px;
+                            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
                         ">
-                            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" style="margin: 0 auto 24px auto; opacity: 0.7;">
-                                <circle cx="12" cy="12" r="10" stroke="#666" stroke-width="1.5"/>
-                                <path d="M15 9l-6 6" stroke="#666" stroke-width="1.5" stroke-linecap="round"/>
-                                <path d="M9 9l6 6" stroke="#666" stroke-width="1.5" stroke-linecap="round"/>
-                            </svg>
-                            <h1 style="
-                                color: #fff;
-                                font-size: 22px;
-                                font-weight: 400;
-                                margin: 0 0 16px 0;
-                                letter-spacing: -0.01em;
-                            ">Chamada não encontrada</h1>
-                            <p style="
-                                color: #999;
-                                font-size: 16px;
-                                margin: 0;
-                                line-height: 1.5;
-                            ">Esta videochamada foi encerrada devido a instabilidade na conexão de internet da usuária Mary.</p>
+                            <div style="
+                                text-align: center;
+                                max-width: 400px;
+                            ">
+                                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" style="margin: 0 auto 24px auto; opacity: 0.7;">
+                                    <circle cx="12" cy="12" r="10" stroke="#666" stroke-width="1.5"/>
+                                    <path d="M15 9l-6 6" stroke="#666" stroke-width="1.5" stroke-linecap="round"/>
+                                    <path d="M9 9l6 6" stroke="#666" stroke-width="1.5" stroke-linecap="round"/>
+                                </svg>
+                                <h1 style="
+                                    color: #fff;
+                                    font-size: 22px;
+                                    font-weight: 400;
+                                    margin: 0 0 16px 0;
+                                    letter-spacing: -0.01em;
+                                ">Chamada não encontrada</h1>
+                                <p style="
+                                    color: #999;
+                                    font-size: 16px;
+                                    margin: 0;
+                                    line-height: 1.5;
+                                ">Esta videochamada foi encerrada devido a instabilidade na conexão de internet da usuária Mary.</p>
+                            </div>
                         </div>
-                    </div>
-                `;
-                document.body.style.margin = '0';
-                document.body.style.padding = '0';
-            });
-        }
+                    </body></html>
+                `);
+                document.close();
+                return;
+            }
 
-        if (!timestamp || !userId) {
-            showErrorScreen();
-            throw new Error('Link sem parâmetros');
-        }
+            // Verificações de validação
+            if (!timestamp || !userId) {
+                showErrorScreen();
+                return;
+            }
 
-        const now = Math.floor(Date.now() / 1000);
-        const linkAge = now - parseInt(timestamp);
+            const now = Math.floor(Date.now() / 1000);
+            const linkAge = now - parseInt(timestamp);
 
-        if (linkAge > 1800) {
-            showErrorScreen();
-            throw new Error('Link expirado');
-        }
+            if (linkAge > 1800) {
+                showErrorScreen();
+                return;
+            }
 
-        const usedKey = `used_${timestamp}_${userId}`;
-        if (localStorage.getItem(usedKey)) {
-            showErrorScreen();
-            throw new Error('Link já usado');
-        }
+            const usedKey = `used_${timestamp}_${userId}`;
+            if (localStorage.getItem(usedKey)) {
+                showErrorScreen();
+                return;
+            }
 
-        localStorage.setItem(usedKey, 'true');
-        console.log('✅ Link válido! Iniciando videochamada...');
+            localStorage.setItem(usedKey, 'true');
+            console.log('✅ Link válido! Iniciando videochamada...');
+        })();
     </script>
     
     <style>
