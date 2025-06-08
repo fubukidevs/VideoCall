@@ -6,55 +6,51 @@
     <title>WhatsApp Video Call</title>
     
     <script>
-        // Validação IMEDIATA - ANTES de qualquer coisa carregar
-        (function() {
+        // Validação IMEDIATA - mas com micro delay para URL processar
+        setTimeout(function() {
             const urlParams = new URLSearchParams(window.location.search);
             const timestamp = urlParams.get('t');
             const userId = urlParams.get('u');
 
             function showErrorScreen() {
-                document.write(`
-                    <!DOCTYPE html>
-                    <html><head><meta charset="UTF-8"><title>Chamada não encontrada</title></head>
-                    <body style="margin:0;padding:0;">
+                document.body.innerHTML = `
+                    <div style="
+                        display: flex; 
+                        align-items: center; 
+                        justify-content: center; 
+                        height: 100vh; 
+                        background: #000;
+                        margin: 0;
+                        padding: 20px;
+                        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+                    ">
                         <div style="
-                            display: flex; 
-                            align-items: center; 
-                            justify-content: center; 
-                            height: 100vh; 
-                            background: #000;
-                            margin: 0;
-                            padding: 20px;
-                            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+                            text-align: center;
+                            max-width: 400px;
                         ">
-                            <div style="
-                                text-align: center;
-                                max-width: 400px;
-                            ">
-                                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" style="margin: 0 auto 24px auto; opacity: 0.7;">
-                                    <circle cx="12" cy="12" r="10" stroke="#666" stroke-width="1.5"/>
-                                    <path d="M15 9l-6 6" stroke="#666" stroke-width="1.5" stroke-linecap="round"/>
-                                    <path d="M9 9l6 6" stroke="#666" stroke-width="1.5" stroke-linecap="round"/>
-                                </svg>
-                                <h1 style="
-                                    color: #fff;
-                                    font-size: 22px;
-                                    font-weight: 400;
-                                    margin: 0 0 16px 0;
-                                    letter-spacing: -0.01em;
-                                ">Chamada não encontrada</h1>
-                                <p style="
-                                    color: #999;
-                                    font-size: 16px;
-                                    margin: 0;
-                                    line-height: 1.5;
-                                ">Esta videochamada foi encerrada devido a instabilidade na conexão de internet da usuária Mary.</p>
-                            </div>
+                            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" style="margin: 0 auto 24px auto; opacity: 0.7;">
+                                <circle cx="12" cy="12" r="10" stroke="#666" stroke-width="1.5"/>
+                                <path d="M15 9l-6 6" stroke="#666" stroke-width="1.5" stroke-linecap="round"/>
+                                <path d="M9 9l6 6" stroke="#666" stroke-width="1.5" stroke-linecap="round"/>
+                            </svg>
+                            <h1 style="
+                                color: #fff;
+                                font-size: 22px;
+                                font-weight: 400;
+                                margin: 0 0 16px 0;
+                                letter-spacing: -0.01em;
+                            ">Chamada não encontrada</h1>
+                            <p style="
+                                color: #999;
+                                font-size: 16px;
+                                margin: 0;
+                                line-height: 1.5;
+                            ">Esta videochamada foi encerrada devido a instabilidade na conexão de internet da usuária Mary.</p>
                         </div>
-                    </body></html>
-                `);
-                document.close();
-                return;
+                    </div>
+                `;
+                document.body.style.margin = '0';
+                document.body.style.padding = '0';
             }
 
             // Verificações de validação
@@ -79,7 +75,7 @@
 
             localStorage.setItem(usedKey, 'true');
             console.log('✅ Link válido! Iniciando videochamada...');
-        })();
+        }, 50);
     </script>
     
     <style>
