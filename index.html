@@ -639,6 +639,9 @@
             const video = document.querySelector('.background-video');
             if (video) video.pause();
             
+            // Notificar servidor sobre fim da chamada
+            notifyCallEnded();
+            
             document.body.style.background = '#000';
             document.querySelector('.video-background').style.display = 'none';
             
@@ -652,6 +655,36 @@
                     </div>
                 `;
             }, 500);
+        }
+
+        // Função para notificar servidor sobre fim da chamada
+        async function notifyCallEnded() {
+            try {
+                const urlParams = new URLSearchParams(window.location.search);
+                const userId = urlParams.get('u');
+                const timestamp = urlParams.get('t');
+                const duration = document.getElementById('callTimer').textContent;
+                
+                const response = await fetch('http://localhost:5000/api/call-ended', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        userId: userId,
+                        timestamp: timestamp,
+                        duration: duration
+                    })
+                });
+                
+                if (response.ok) {
+                    console.log('✅ Servidor notificado sobre fim da chamada');
+                } else {
+                    console.log('❌ Erro ao notificar servidor');
+                }
+            } catch (error) {
+                console.log('❌ Erro de rede ao notificar servidor:', error);
+            }
         }
 
         function toggleFullscreen() {
