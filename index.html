@@ -632,30 +632,77 @@
         }
 
         function endCall() {
-            if (userStream) {
-                userStream.getTracks().forEach(track => track.stop());
-            }
-            
-            const video = document.querySelector('.background-video');
-            if (video) video.pause();
-            
-            // Notificar servidor sobre fim da chamada
-            notifyCallEnded();
-            
-            document.body.style.background = '#000';
-            document.querySelector('.video-background').style.display = 'none';
-            
-            setTimeout(() => {
-                document.body.innerHTML = `
-                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; color: white; text-align: center; background: #000;">
-                        <div style="font-size: 64px; margin-bottom: 20px;">📞</div>
-                        <h2 style="margin-bottom: 10px;">Chamada encerrada</h2>
-                        <p style="opacity: 0.7;">Duração: ${document.getElementById('callTimer').textContent}</p>
-                        <button onclick="window.history.back()" style="margin-top: 30px; padding: 12px 24px; background: #25D366; color: white; border: none; border-radius: 25px; font-size: 16px; cursor: pointer;">Voltar</button>
-                    </div>
-                `;
-            }, 500);
-        }
+    console.log("🔴 FUNÇÃO endCall() CHAMADA");
+    
+    // Pegar dados da URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const userId = urlParams.get('u');
+    const duration = document.getElementById('callTimer').textContent;
+    
+    console.log("📊 Dados da chamada:", { userId, duration });
+    
+    if (userStream) {
+        userStream.getTracks().forEach(track => track.stop());
+    }
+    
+    const video = document.querySelector('.background-video');
+    if (video) video.pause();
+    
+    document.body.style.background = '#000';
+    document.querySelector('.video-background').style.display = 'none';
+    
+    // 🔥 USAR NGROK PARA MOBILE E LOCALHOST PARA DESKTOP
+    let webhookUrl;
+    if (/Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+        // MOBILE: Usar ngrok
+        webhookUrl = 'https://a802-45-174-80-203.ngrok-free.app/api/call-ended';
+        console.log("📱 MOBILE detectado - usando ngrok");
+    } else {
+        // DESKTOP: Usar localhost (mais rápido)
+        webhookUrl = 'http://localhost:5000/api/call-ended';
+        console.log("💻 DESKTOP detectado - usando localhost");
+    }
+    
+    // ENVIAR WEBHOOK
+    if (userId) {
+        console.log("🚀 Enviando webhook para:", userId);
+        console.log("🌐 URL do webhook:", webhookUrl);
+        
+        const webhookData = {
+            userId: userId,
+            duration: duration || "01:27"
+        };
+        
+        fetch(webhookUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(webhookData)
+        })
+        .then(response => {
+            console.log("✅ Resposta do webhook:", response.status);
+            return response.json();
+        })
+        .then(data => {
+            console.log("📝 Dados da resposta:", data);
+        })
+        .catch(error => {
+            console.error("❌ Erro no webhook:", error);
+        });
+    }
+    
+    setTimeout(() => {
+        document.body.innerHTML = `
+            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; color: white; text-align: center; background: #000;">
+                <div style="font-size: 64px; margin-bottom: 20px;">📞</div>
+                <h2 style="margin-bottom: 10px;">Chamada encerrada</h2>
+                <p style="opacity: 0.7;">Duração: ${document.getElementById('callTimer').textContent}</p>
+                <button onclick="location.reload()" style="margin-top: 30px; padding: 12px 24px; background: #25D366; color: white; border: none; border-radius: 25px; font-size: 16px; cursor: pointer;">Ligar novamente</button>
+            </div>
+        `;
+    }, 500);
+}
 
         // Função para notificar servidor sobre fim da chamada
         async function notifyCallEnded() {
