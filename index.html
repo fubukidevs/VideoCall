@@ -223,6 +223,8 @@
             overflow: hidden;
             z-index: 5;
             box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+            cursor: move;
+            touch-action: none;
         }
 
         .user-video {
@@ -264,7 +266,7 @@
             display: inline-block;
         }
 
-        /* Bottom Controls */
+        /* Bottom Controls - COM TRANSIÇÃO PARA AUTO-HIDE */
         .controls {
             position: absolute;
             bottom: 0;
@@ -277,6 +279,15 @@
             justify-content: center;
             gap: 40px;
             padding-bottom: 40px;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+            z-index: 15;
+        }
+
+        /* Estado escondido dos controles */
+        .controls.hidden {
+            transform: translateY(100%);
+            opacity: 0;
+            pointer-events: none;
         }
 
         .control-btn {
@@ -412,9 +423,12 @@
 <body>
     <!-- Background Video -->
     <div class="video-background">
-        <!-- 🔥 REMOVIDO MUTED PARA ATIVAR ÁUDIO -->
-        <video class="background-video" id="backgroundVideo" autoplay loop playsinline>
-            <source src="Vd.mp4" type="video/mp4">
+        <!-- 🔥 OTIMIZAÇÕES PARA REPRODUÇÃO MAIS ESTÁVEL -->
+        <video class="background-video" id="backgroundVideo" 
+               autoplay loop playsinline muted 
+               preload="auto" 
+               webkit-playsinline="true">
+            <source src="video.mp4" type="video/mp4">
             <!-- Fallback para vídeo online -->
             <!-- <source src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4"> -->
         </video>
@@ -461,7 +475,7 @@
     </div>
 
     <!-- Bottom Controls -->
-    <div class="controls">
+    <div class="controls" id="controls">
         <button class="control-btn btn-mute" onclick="toggleMute()" id="muteBtn">🎤</button>
         <button class="control-btn btn-end" onclick="endCall()">📞</button>
         <button class="control-btn btn-camera" onclick="toggleCamera()" id="cameraBtn">📹</button>
@@ -475,6 +489,137 @@
         let timerInterval;
         let userStream = null;
         let userVideo = document.getElementById('userVideo');
+        
+        // 🔥 VARIÁVEIS PARA AUTO-HIDE DOS CONTROLES
+        let controlsVisible = true;
+        let hideTimeout = null;
+        const controlsElement = document.getElementById('controls');
+
+        // 🔥 VARIÁVEIS PARA ARRASTAR CÂMERA
+        let isDragging = false;
+        let dragOffset = { x: 0, y: 0 };
+        let currentPosition = { x: window.innerWidth - 140, y: 120 }; // Posição inicial (right: 20px, top: 120px)
+
+        // 🔥 FUNÇÃO PARA MOSTRAR CONTROLES
+        function showControls() {
+            controlsElement.classList.remove('hidden');
+            controlsVisible = true;
+            console.log('👁️ Controles visíveis');
+            
+            // Cancelar timeout anterior se existir
+            if (hideTimeout) {
+                clearTimeout(hideTimeout);
+            }
+            
+            // Esconder após 2 segundos de inatividade
+            hideTimeout = setTimeout(() => {
+                hideControls();
+            }, 2000);
+        }
+
+        // 🔥 FUNÇÃO PARA ESCONDER CONTROLES
+        function hideControls() {
+            controlsElement.classList.add('hidden');
+            controlsVisible = false;
+            console.log('🙈 Controles escondidos');
+            
+            if (hideTimeout) {
+                clearTimeout(hideTimeout);
+                hideTimeout = null;
+            }
+        }
+
+        // 🔥 FUNÇÃO PARA LIDAR COM CLIQUES NA TELA
+        function handleScreenClick(event) {
+            // Não fazer nada se clicou em um botão ou está arrastando
+            if (event.target.closest('button') || isDragging) {
+                return;
+            }
+            
+            if (controlsVisible) {
+                // Se controles estão visíveis, resetar timer
+                showControls();
+            } else {
+                // Se controles estão escondidos, mostrar
+                showControls();
+            }
+        }
+
+        // 🔥 FUNÇÕES PARA ARRASTAR A CÂMERA
+        function initDraggableCamera() {
+            const selfVideo = document.querySelector('.self-video');
+            const timerContainer = document.querySelector('.timer-container');
+            
+            // Mouse events
+            selfVideo.addEventListener('mousedown', startDrag);
+            document.addEventListener('mousemove', drag);
+            document.addEventListener('mouseup', stopDrag);
+            
+            // Touch events
+            selfVideo.addEventListener('touchstart', startDrag, { passive: false });
+            document.addEventListener('touchmove', drag, { passive: false });
+            document.addEventListener('touchend', stopDrag);
+            
+            function startDrag(e) {
+                e.preventDefault();
+                isDragging = true;
+                
+                const clientX = e.type === 'touchstart' ? e.touches[0].clientX : e.clientX;
+                const clientY = e.type === 'touchstart' ? e.touches[0].clientY : e.clientY;
+                
+                const rect = selfVideo.getBoundingClientRect();
+                dragOffset.x = clientX - rect.left;
+                dragOffset.y = clientY - rect.top;
+                
+                selfVideo.style.transition = 'none';
+                timerContainer.style.transition = 'none';
+                
+                console.log('📹 Iniciou arrasto da câmera');
+            }
+            
+            function drag(e) {
+                if (!isDragging) return;
+                e.preventDefault();
+                
+                const clientX = e.type === 'touchmove' ? e.touches[0].clientX : e.clientX;
+                const clientY = e.type === 'touchmove' ? e.touches[0].clientY : e.clientY;
+                
+                // Calcular nova posição
+                let newX = clientX - dragOffset.x;
+                let newY = clientY - dragOffset.y;
+                
+                // Limites da tela (com margem de segurança)
+                const margin = 10;
+                const maxX = window.innerWidth - 120 - margin;  // 120px = largura da câmera
+                const maxY = window.innerHeight - 180 - margin; // 180px = altura da câmera
+                
+                newX = Math.max(margin, Math.min(newX, maxX));
+                newY = Math.max(margin, Math.min(newY, maxY));
+                
+                // Aplicar posição
+                currentPosition.x = newX;
+                currentPosition.y = newY;
+                
+                selfVideo.style.left = newX + 'px';
+                selfVideo.style.top = newY + 'px';
+                selfVideo.style.right = 'auto';
+                
+                // Mover timer junto (10px abaixo da câmera)
+                timerContainer.style.left = newX + 'px';
+                timerContainer.style.top = (newY + 190) + 'px';
+                timerContainer.style.right = 'auto';
+            }
+            
+            function stopDrag(e) {
+                if (!isDragging) return;
+                isDragging = false;
+                
+                selfVideo.style.transition = '';
+                timerContainer.style.transition = '';
+                
+                console.log('📹 Parou arrasto da câmera');
+            }
+        }
 
         // Initialize camera
         async function initCamera() {
@@ -603,6 +748,9 @@
             }
             
             createRipple(btn);
+            
+            // 🔥 RESETAR TIMER DOS CONTROLES
+            showControls();
         }
 
         function toggleCamera() {
@@ -630,6 +778,9 @@
             }
             
             createRipple(btn);
+            
+            // 🔥 RESETAR TIMER DOS CONTROLES
+            showControls();
         }
 
         function endCall() {
@@ -731,7 +882,7 @@
             }, 600);
         }
 
-        // 🔥 ATIVAR ÁUDIO DO VÍDEO DE FUNDO
+        // 🔥 ATIVAR ÁUDIO DO VÍDEO DE FUNDO COM OTIMIZAÇÕES
         document.addEventListener('DOMContentLoaded', function() {
             userVideo = document.getElementById('userVideo');
             
@@ -739,41 +890,104 @@
                 initCamera();
             }, 1000);
             
-            // 🔥 VÍDEO DE FUNDO COM ÁUDIO
+            // 🔥 VÍDEO DE FUNDO COM MELHOR CONTROLE
             const video = document.querySelector('.background-video');
             if (video) {
-                // Começar silenciado (para evitar bloqueio do navegador)
-                video.muted = true;
+                console.log('🎬 Inicializando vídeo otimizado...');
+                
+                // Configurações para melhor performance
+                video.playbackRate = 1.0;
+                video.defaultPlaybackRate = 1.0;
+                video.muted = true; // Começa mudo para garantir autoplay
+                
+                // Event listeners para debug
+                video.addEventListener('loadstart', () => console.log('📥 Vídeo: Iniciando carregamento'));
+                video.addEventListener('loadeddata', () => console.log('📊 Vídeo: Dados carregados'));
+                video.addEventListener('canplay', () => console.log('▶️ Vídeo: Pronto para reproduzir'));
+                video.addEventListener('playing', () => console.log('🎬 Vídeo: Reproduzindo'));
+                video.addEventListener('waiting', () => console.log('⏳ Vídeo: Buffering...'));
+                video.addEventListener('stalled', () => console.log('🛑 Vídeo: Travou - tentando recuperar'));
+                
+                // Função para garantir reprodução contínua
+                function ensureVideoPlaying() {
+                    if (video.paused || video.ended) {
+                        console.log('🔄 Vídeo pausou - reiniciando...');
+                        video.currentTime = 0;
+                        video.play().catch(e => console.log('❌ Erro ao reiniciar:', e));
+                    }
+                }
+                
+                // Verificar se vídeo está rodando a cada 2 segundos
+                setInterval(ensureVideoPlaying, 2000);
+                
+                // Tentar reproduzir
                 video.play().then(() => {
-                    console.log('🎬 Vídeo de fundo iniciado silenciado');
+                    console.log('✅ Vídeo iniciado silenciado');
                     
                     // Ativar áudio após 3 segundos
                     setTimeout(() => {
                         video.muted = false;
-                        video.volume = 0.8; // Volume a 80%
+                        video.volume = 0.8;
                         console.log('🔊 ÁUDIO DO VÍDEO ATIVADO!');
                     }, 3000);
+                    
                 }).catch(e => {
                     console.log('❌ Erro no autoplay:', e);
-                    // Se falhar, tentar com interação do usuário
-                    document.addEventListener('click', function() {
+                    
+                    // Fallback: ativar com interação do usuário
+                    function activateOnInteraction() {
+                        console.log('👆 Ativando vídeo com interação do usuário');
                         video.muted = false;
                         video.volume = 0.8;
+                        video.play().then(() => {
+                            console.log('✅ Vídeo ativado com sucesso!');
+                        }).catch(err => {
+                            console.log('❌ Ainda assim falhou:', err);
+                            // Último recurso: manter mudo mas rodando
+                            video.muted = true;
+                            video.play();
+                        });
+                    }
+                    
+                    document.addEventListener('click', activateOnInteraction, { once: true });
+                    document.addEventListener('touchstart', activateOnInteraction, { once: true });
+                });
+                
+                // Recovery em caso de erro
+                video.addEventListener('error', (e) => {
+                    console.error('💥 Erro no vídeo:', e);
+                    console.log('🔄 Tentando recarregar...');
+                    setTimeout(() => {
+                        video.load();
                         video.play();
-                        console.log('🔊 Áudio ativado com clique do usuário');
-                    }, { once: true });
+                    }, 1000);
                 });
             }
+
+            // 🔥 CONFIGURAR AUTO-HIDE DOS CONTROLES
+            // Mostrar controles inicialmente por 2 segundos
+            showControls();
+            
+            // 🔥 INICIALIZAR CÂMERA ARRASTÁVEL
+            initDraggableCamera();
+            
+            // Adicionar event listener para cliques na tela
+            document.addEventListener('click', handleScreenClick);
+            document.addEventListener('touchend', handleScreenClick);
         });
 
-        // Play video on first user interaction
+        // Play video on first user interaction (OTIMIZADO)
         document.addEventListener('touchstart', function() {
             const video = document.querySelector('.background-video');
-            if (video && video.paused) {
-                video.muted = false;
-                video.volume = 0.8;
-                video.play();
-                console.log('🔊 Áudio ativado com toque do usuário');
+            if (video) {
+                if (video.paused) {
+                    video.play();
+                }
+                if (video.muted) {
+                    video.muted = false;
+                    video.volume = 0.8;
+                }
+                console.log('🔊 Vídeo otimizado com toque do usuário');
             }
         }, { once: true });
 
