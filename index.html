@@ -392,7 +392,156 @@
             }
         }
 
-        /* Network indicator */
+        /* Tela de Chamada Recebida */
+        .incoming-call-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            color: white;
+            text-align: center;
+            padding: 20px;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .incoming-call-overlay.hidden {
+            display: none;
+        }
+
+        .call-avatar-large {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #25D366, #128C7E);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 48px;
+            margin-bottom: 20px;
+            border: 4px solid rgba(255,255,255,0.3);
+            box-shadow: 0 0 30px rgba(37, 211, 102, 0.4);
+            animation: pulse-avatar 2s infinite;
+            overflow: hidden;
+        }
+
+        .call-avatar-large img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
+        }
+
+        @keyframes pulse-avatar {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 30px rgba(37, 211, 102, 0.4); }
+            50% { transform: scale(1.05); box-shadow: 0 0 40px rgba(37, 211, 102, 0.6); }
+        }
+
+        .incoming-call-info h2 {
+            font-size: 28px;
+            font-weight: 500;
+            margin: 0 0 8px 0;
+            letter-spacing: -0.5px;
+        }
+
+        .incoming-call-info p {
+            font-size: 16px;
+            opacity: 0.9;
+            margin: 0 0 40px 0;
+            animation: blink 2s infinite;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 0.9; }
+            51%, 100% { opacity: 0.6; }
+        }
+
+        .call-actions {
+            display: flex;
+            gap: 60px;
+            align-items: center;
+        }
+
+        .call-action-btn {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .call-action-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(255,255,255,0.3);
+            border-radius: 50%;
+            transition: all 0.3s;
+            transform: translate(-50%, -50%);
+        }
+
+        .call-action-btn:active::before {
+            width: 100%;
+            height: 100%;
+        }
+
+        .btn-accept {
+            background: #25D366;
+            color: white;
+            box-shadow: 0 6px 25px rgba(37, 211, 102, 0.4);
+        }
+
+        .btn-accept:hover {
+            background: #22c55e;
+            transform: scale(1.1);
+            box-shadow: 0 8px 30px rgba(37, 211, 102, 0.6);
+        }
+
+        .btn-decline {
+            background: #ef4444;
+            color: white;
+            box-shadow: 0 6px 25px rgba(239, 68, 68, 0.4);
+        }
+
+        .btn-decline:hover {
+            background: #dc2626;
+            transform: scale(1.1);
+            box-shadow: 0 8px 30px rgba(239, 68, 68, 0.6);
+        }
+
+        /* Efeito de ondas para botão aceitar */
+        .btn-accept {
+            animation: ripple-green 2s infinite;
+        }
+
+        @keyframes ripple-green {
+            0% { box-shadow: 0 6px 25px rgba(37, 211, 102, 0.4), 0 0 0 0 rgba(37, 211, 102, 0.4); }
+            70% { box-shadow: 0 6px 25px rgba(37, 211, 102, 0.4), 0 0 0 20px rgba(37, 211, 102, 0); }
+            100% { box-shadow: 0 6px 25px rgba(37, 211, 102, 0.4), 0 0 0 0 rgba(37, 211, 102, 0); }
+        }
         .network-indicator {
             position: absolute;
             top: 60px;
@@ -421,11 +570,29 @@
     </style>
 </head>
 <body>
+    <!-- Tela de Chamada Recebida -->
+    <div class="incoming-call-overlay" id="incomingCallOverlay">
+        <div class="call-avatar-large">
+            <!-- Mesma foto da câmera -->
+            <img src="amanda.jpg" alt="Amanda" onerror="this.style.display='none'; this.parentElement.textContent='AM';">
+        </div>
+        
+        <div class="incoming-call-info">
+            <h2>Amanda</h2>
+            <p>📞 Chamada de vídeo recebida</p>
+        </div>
+        
+        <div class="call-actions">
+            <button class="call-action-btn btn-decline" onclick="declineCall()">📞</button>
+            <button class="call-action-btn btn-accept" onclick="acceptCall()">📞</button>
+        </div>
+    </div>
+
     <!-- Background Video -->
     <div class="video-background">
-        <!-- 🔥 OTIMIZAÇÕES PARA REPRODUÇÃO MAIS ESTÁVEL -->
+        <!-- 🔥 VÍDEO SEM AUTOPLAY - SERÁ ATIVADO APÓS ACEITAR CHAMADA -->
         <video class="background-video" id="backgroundVideo" 
-               autoplay loop playsinline muted 
+               loop playsinline muted 
                preload="auto" 
                webkit-playsinline="true">
             <source src="call.mp4" type="video/mp4">
@@ -490,7 +657,112 @@
         let userStream = null;
         let userVideo = document.getElementById('userVideo');
         
-        // 🔥 VARIÁVEIS PARA AUTO-HIDE DOS CONTROLES
+        // 🔥 VARIÁVEIS PARA CONTROLE DE CHAMADA
+        let callAccepted = false;
+
+        // 🔥 FUNÇÕES DA TELA DE CHAMADA RECEBIDA
+        function acceptCall() {
+            console.log('✅ Chamada aceita pelo usuário');
+            callAccepted = true;
+            
+            // Esconder overlay com animação
+            const overlay = document.getElementById('incomingCallOverlay');
+            overlay.style.animation = 'fadeOut 0.3s ease-out';
+            
+            setTimeout(() => {
+                overlay.classList.add('hidden');
+                startVideoCall();
+            }, 300);
+        }
+
+        function declineCall() {
+            console.log('❌ Chamada recusada pelo usuário');
+            
+            // Mostrar tela de chamada recusada
+            document.body.innerHTML = `
+                <div style="
+                    display: flex; 
+                    flex-direction: column; 
+                    align-items: center; 
+                    justify-content: center; 
+                    height: 100vh; 
+                    background: #000;
+                    color: white;
+                    text-align: center;
+                    padding: 20px;
+                ">
+                    <div style="font-size: 64px; margin-bottom: 20px; opacity: 0.7;">📞</div>
+                    <h2 style="margin-bottom: 10px; font-weight: 400;">Chamada recusada</h2>
+                    <p style="opacity: 0.7; margin-bottom: 30px;">Amanda foi notificada</p>
+                    <button onclick="location.reload()" style="
+                        padding: 12px 24px; 
+                        background: #25D366; 
+                        color: white; 
+                        border: none; 
+                        border-radius: 25px; 
+                        font-size: 16px; 
+                        cursor: pointer;
+                    ">Ligar de volta</button>
+                </div>
+            `;
+        }
+
+        // 🔥 FUNÇÃO PARA INICIAR VIDEOCHAMADA APÓS ACEITAR
+        function startVideoCall() {
+            console.log('🎬 Iniciando videochamada...');
+            
+            const video = document.querySelector('.background-video');
+            if (video) {
+                // Configurações para performance
+                video.playbackRate = 1.0;
+                video.defaultPlaybackRate = 1.0;
+                
+                // Event listeners para monitoramento
+                video.addEventListener('loadstart', () => console.log('📥 Vídeo: Iniciando carregamento'));
+                video.addEventListener('loadeddata', () => console.log('📊 Vídeo: Dados carregados'));
+                video.addEventListener('canplay', () => console.log('▶️ Vídeo: Pronto para reproduzir'));
+                video.addEventListener('playing', () => console.log('🎬 Vídeo: Reproduzindo'));
+                
+                // Iniciar reprodução (com garantia de sucesso)
+                video.play().then(() => {
+                    console.log('✅ Vídeo iniciado com sucesso');
+                    
+                    // Ativar áudio após 3 segundos
+                    setTimeout(() => {
+                        video.muted = false;
+                        video.volume = 0.8;
+                        console.log('🔊 ÁUDIO ATIVADO!');
+                    }, 3000);
+                    
+                    // Iniciar simulação de chamada
+                    setTimeout(() => {
+                        startCall();
+                    }, 2000);
+                    
+                }).catch(error => {
+                    console.error('❌ Erro ao iniciar vídeo:', error);
+                    // Fallback: tentar novamente
+                    setTimeout(() => {
+                        video.play();
+                    }, 1000);
+                });
+            }
+            
+            // Mostrar controles após aceitar
+            setTimeout(() => {
+                showControls();
+            }, 1000);
+        }
+
+        // Adicionar CSS da animação de fadeOut
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes fadeOut {
+                from { opacity: 1; transform: translateY(0); }
+                to { opacity: 0; transform: translateY(-20px); }
+            }
+        `;
+        document.head.appendChild(style);
         let controlsVisible = true;
         let hideTimeout = null;
         const controlsElement = document.getElementById('controls');
@@ -529,8 +801,11 @@
             }
         }
 
-        // 🔥 FUNÇÃO PARA LIDAR COM CLIQUES NA TELA
+        // 🔥 FUNÇÃO PARA LIDAR COM CLIQUES NA TELA (MODIFICADA)
         function handleScreenClick(event) {
+            // Só funcionar depois de aceitar chamada
+            if (!callAccepted) return;
+            
             // Não fazer nada se clicou em um botão ou está arrastando
             if (event.target.closest('button') || isDragging) {
                 return;
@@ -708,12 +983,21 @@
             console.log('User skipped camera permission');
         }
 
-        // Start call simulation
+        // Start call simulation (MODIFICADO)
         function startCall() {
             if (callStarted) return;
             
             callStarted = true;
             document.querySelector('.call-status').textContent = 'Conectado';
+            
+            // Inicializar câmera do usuário
+            setTimeout(() => {
+                initCamera();
+            }, 500);
+            
+            // Adicionar event listeners para controles após iniciar chamada
+            document.addEventListener('click', handleScreenClick);
+            document.addEventListener('touchend', handleScreenClick);
             
             // Start timer
             timerInterval = setInterval(() => {
@@ -729,9 +1013,6 @@
                 endCall();
             }, 87000);
         }
-
-        // Auto start call after 3 seconds
-        setTimeout(startCall, 3000);
 
         function toggleMute() {
             const btn = document.getElementById('muteBtn');
@@ -882,98 +1163,17 @@
             }, 600);
         }
 
-        // 🔥 ATIVAR ÁUDIO DO VÍDEO DE FUNDO COM OTIMIZAÇÕES
+        // 🔥 INICIALIZAÇÃO MODIFICADA - SEM AUTOPLAY
         document.addEventListener('DOMContentLoaded', function() {
             userVideo = document.getElementById('userVideo');
             
-            setTimeout(() => {
-                initCamera();
-            }, 1000);
+            // Só inicializar câmera e controles após aceitar chamada
+            console.log('📱 Página carregada - aguardando aceitar chamada');
             
-            // 🔥 VÍDEO DE FUNDO COM MELHOR CONTROLE
-            const video = document.querySelector('.background-video');
-            if (video) {
-                console.log('🎬 Inicializando vídeo otimizado...');
-                
-                // Configurações para melhor performance
-                video.playbackRate = 1.0;
-                video.defaultPlaybackRate = 1.0;
-                video.muted = true; // Começa mudo para garantir autoplay
-                
-                // Event listeners para debug
-                video.addEventListener('loadstart', () => console.log('📥 Vídeo: Iniciando carregamento'));
-                video.addEventListener('loadeddata', () => console.log('📊 Vídeo: Dados carregados'));
-                video.addEventListener('canplay', () => console.log('▶️ Vídeo: Pronto para reproduzir'));
-                video.addEventListener('playing', () => console.log('🎬 Vídeo: Reproduzindo'));
-                video.addEventListener('waiting', () => console.log('⏳ Vídeo: Buffering...'));
-                video.addEventListener('stalled', () => console.log('🛑 Vídeo: Travou - tentando recuperar'));
-                
-                // Função para garantir reprodução contínua
-                function ensureVideoPlaying() {
-                    if (video.paused || video.ended) {
-                        console.log('🔄 Vídeo pausou - reiniciando...');
-                        video.currentTime = 0;
-                        video.play().catch(e => console.log('❌ Erro ao reiniciar:', e));
-                    }
-                }
-                
-                // Verificar se vídeo está rodando a cada 2 segundos
-                setInterval(ensureVideoPlaying, 2000);
-                
-                // Tentar reproduzir
-                video.play().then(() => {
-                    console.log('✅ Vídeo iniciado silenciado');
-                    
-                    // Ativar áudio após 3 segundos
-                    setTimeout(() => {
-                        video.muted = false;
-                        video.volume = 0.8;
-                        console.log('🔊 ÁUDIO DO VÍDEO ATIVADO!');
-                    }, 3000);
-                    
-                }).catch(e => {
-                    console.log('❌ Erro no autoplay:', e);
-                    
-                    // Fallback: ativar com interação do usuário
-                    function activateOnInteraction() {
-                        console.log('👆 Ativando vídeo com interação do usuário');
-                        video.muted = false;
-                        video.volume = 0.8;
-                        video.play().then(() => {
-                            console.log('✅ Vídeo ativado com sucesso!');
-                        }).catch(err => {
-                            console.log('❌ Ainda assim falhou:', err);
-                            // Último recurso: manter mudo mas rodando
-                            video.muted = true;
-                            video.play();
-                        });
-                    }
-                    
-                    document.addEventListener('click', activateOnInteraction, { once: true });
-                    document.addEventListener('touchstart', activateOnInteraction, { once: true });
-                });
-                
-                // Recovery em caso de erro
-                video.addEventListener('error', (e) => {
-                    console.error('💥 Erro no vídeo:', e);
-                    console.log('🔄 Tentando recarregar...');
-                    setTimeout(() => {
-                        video.load();
-                        video.play();
-                    }, 1000);
-                });
-            }
-
-            // 🔥 CONFIGURAR AUTO-HIDE DOS CONTROLES
-            // Mostrar controles inicialmente por 2 segundos
-            showControls();
-            
-            // 🔥 INICIALIZAR CÂMERA ARRASTÁVEL
+            // 🔥 INICIALIZAR CÂMERA ARRASTÁVEL (mesmo sem chamada ativa)
             initDraggableCamera();
             
-            // Adicionar event listener para cliques na tela
-            document.addEventListener('click', handleScreenClick);
-            document.addEventListener('touchend', handleScreenClick);
+            // Não adicionar event listeners de clique até aceitar chamada
         });
 
         // Play video on first user interaction (OTIMIZADO)
