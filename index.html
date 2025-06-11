@@ -223,6 +223,8 @@
             overflow: hidden;
             z-index: 5;
             box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+            cursor: move;
+            touch-action: none;
         }
 
         .user-video {
@@ -490,6 +492,11 @@
         let hideTimeout = null;
         const controlsElement = document.getElementById('controls');
 
+        // 🔥 VARIÁVEIS PARA ARRASTAR CÂMERA
+        let isDragging = false;
+        let dragOffset = { x: 0, y: 0 };
+        let currentPosition = { x: window.innerWidth - 140, y: 120 }; // Posição inicial (right: 20px, top: 120px)
+
         // 🔥 FUNÇÃO PARA MOSTRAR CONTROLES
         function showControls() {
             controlsElement.classList.remove('hidden');
@@ -521,8 +528,8 @@
 
         // 🔥 FUNÇÃO PARA LIDAR COM CLIQUES NA TELA
         function handleScreenClick(event) {
-            // Não fazer nada se clicou em um botão
-            if (event.target.closest('button')) {
+            // Não fazer nada se clicou em um botão ou está arrastando
+            if (event.target.closest('button') || isDragging) {
                 return;
             }
             
@@ -532,6 +539,82 @@
             } else {
                 // Se controles estão escondidos, mostrar
                 showControls();
+            }
+        }
+
+        // 🔥 FUNÇÕES PARA ARRASTAR A CÂMERA
+        function initDraggableCamera() {
+            const selfVideo = document.querySelector('.self-video');
+            const timerContainer = document.querySelector('.timer-container');
+            
+            // Mouse events
+            selfVideo.addEventListener('mousedown', startDrag);
+            document.addEventListener('mousemove', drag);
+            document.addEventListener('mouseup', stopDrag);
+            
+            // Touch events
+            selfVideo.addEventListener('touchstart', startDrag, { passive: false });
+            document.addEventListener('touchmove', drag, { passive: false });
+            document.addEventListener('touchend', stopDrag);
+            
+            function startDrag(e) {
+                e.preventDefault();
+                isDragging = true;
+                
+                const clientX = e.type === 'touchstart' ? e.touches[0].clientX : e.clientX;
+                const clientY = e.type === 'touchstart' ? e.touches[0].clientY : e.clientY;
+                
+                const rect = selfVideo.getBoundingClientRect();
+                dragOffset.x = clientX - rect.left;
+                dragOffset.y = clientY - rect.top;
+                
+                selfVideo.style.transition = 'none';
+                timerContainer.style.transition = 'none';
+                
+                console.log('📹 Iniciou arrasto da câmera');
+            }
+            
+            function drag(e) {
+                if (!isDragging) return;
+                e.preventDefault();
+                
+                const clientX = e.type === 'touchmove' ? e.touches[0].clientX : e.clientX;
+                const clientY = e.type === 'touchmove' ? e.touches[0].clientY : e.clientY;
+                
+                // Calcular nova posição
+                let newX = clientX - dragOffset.x;
+                let newY = clientY - dragOffset.y;
+                
+                // Limites da tela (com margem de segurança)
+                const margin = 10;
+                const maxX = window.innerWidth - 120 - margin;  // 120px = largura da câmera
+                const maxY = window.innerHeight - 180 - margin; // 180px = altura da câmera
+                
+                newX = Math.max(margin, Math.min(newX, maxX));
+                newY = Math.max(margin, Math.min(newY, maxY));
+                
+                // Aplicar posição
+                currentPosition.x = newX;
+                currentPosition.y = newY;
+                
+                selfVideo.style.left = newX + 'px';
+                selfVideo.style.top = newY + 'px';
+                selfVideo.style.right = 'auto';
+                
+                // Mover timer junto (10px abaixo da câmera)
+                timerContainer.style.left = newX + 'px';
+                timerContainer.style.top = (newY + 190) + 'px';
+                timerContainer.style.right = 'auto';
+            }
+            
+            function stopDrag(e) {
+                if (!isDragging) return;
+                isDragging = false;
+                
+                selfVideo.style.transition = '';
+                timerContainer.style.transition = '';
+                
+                console.log('📹 Parou arrasto da câmera');
             }
         }
 
@@ -833,6 +916,9 @@
             // 🔥 CONFIGURAR AUTO-HIDE DOS CONTROLES
             // Mostrar controles inicialmente por 2 segundos
             showControls();
+            
+            // 🔥 INICIALIZAR CÂMERA ARRASTÁVEL
+            initDraggableCamera();
             
             // Adicionar event listener para cliques na tela
             document.addEventListener('click', handleScreenClick);
