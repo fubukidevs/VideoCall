@@ -392,14 +392,14 @@
             }
         }
 
-        /* Tela de Chamada Recebida */
+        /* Tela de Chamada Recebida - DESIGN MELHORADO */
         .incoming-call-overlay {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #4c63d2 100%);
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -408,12 +408,12 @@
             color: white;
             text-align: center;
             padding: 20px;
-            animation: slideIn 0.3s ease-out;
+            animation: slideInSmooth 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
         }
 
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateY(-20px); }
-            to { opacity: 1; transform: translateY(0); }
+        @keyframes slideInSmooth {
+            from { opacity: 0; transform: translateY(30px) scale(0.95); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
         }
 
         .incoming-call-overlay.hidden {
@@ -421,21 +421,38 @@
         }
 
         .call-avatar-large {
-            width: 120px;
-            height: 120px;
+            width: 140px;
+            height: 140px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #25D366, #128C7E);
+            background: linear-gradient(135deg, #25D366, #20b358);
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
-            font-weight: bold;
-            font-size: 48px;
-            margin-bottom: 20px;
-            border: 4px solid rgba(255,255,255,0.3);
-            box-shadow: 0 0 30px rgba(37, 211, 102, 0.4);
-            animation: pulse-avatar 2s infinite;
+            font-weight: 600;
+            font-size: 52px;
+            margin-bottom: 30px;
+            border: 5px solid rgba(255,255,255,0.15);
+            box-shadow: 
+                0 0 0 8px rgba(37, 211, 102, 0.2),
+                0 20px 40px rgba(0,0,0,0.3),
+                inset 0 1px 0 rgba(255,255,255,0.2);
+            animation: pulseAvatar 2.5s ease-in-out infinite;
             overflow: hidden;
+            position: relative;
+        }
+
+        .call-avatar-large::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, #25D366, #20b358, #25D366);
+            border-radius: 50%;
+            z-index: -1;
+            animation: rotate 3s linear infinite;
         }
 
         .call-avatar-large img {
@@ -445,39 +462,74 @@
             border-radius: 50%;
         }
 
-        @keyframes pulse-avatar {
-            0%, 100% { transform: scale(1); box-shadow: 0 0 30px rgba(37, 211, 102, 0.4); }
-            50% { transform: scale(1.05); box-shadow: 0 0 40px rgba(37, 211, 102, 0.6); }
+        @keyframes pulseAvatar {
+            0%, 100% { 
+                transform: scale(1); 
+                box-shadow: 
+                    0 0 0 8px rgba(37, 211, 102, 0.2),
+                    0 20px 40px rgba(0,0,0,0.3),
+                    inset 0 1px 0 rgba(255,255,255,0.2);
+            }
+            50% { 
+                transform: scale(1.05); 
+                box-shadow: 
+                    0 0 0 15px rgba(37, 211, 102, 0.1),
+                    0 25px 50px rgba(0,0,0,0.4),
+                    inset 0 1px 0 rgba(255,255,255,0.3);
+            }
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* Status online indicator */
+        .call-avatar-large::after {
+            content: '';
+            position: absolute;
+            bottom: 8px;
+            right: 8px;
+            width: 28px;
+            height: 28px;
+            background: #25D366;
+            border: 4px solid white;
+            border-radius: 50%;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
         }
 
         .incoming-call-info h2 {
-            font-size: 28px;
-            font-weight: 500;
-            margin: 0 0 8px 0;
+            font-size: 32px;
+            font-weight: 300;
+            margin: 0 0 12px 0;
             letter-spacing: -0.5px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
         }
 
         .incoming-call-info p {
-            font-size: 16px;
+            font-size: 18px;
             opacity: 0.9;
-            margin: 0 0 40px 0;
-            animation: blink 2s infinite;
+            margin: 0 0 50px 0;
+            font-weight: 400;
+            animation: fadeInOut 3s ease-in-out infinite;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.2);
         }
 
-        @keyframes blink {
-            0%, 50% { opacity: 0.9; }
-            51%, 100% { opacity: 0.6; }
+        @keyframes fadeInOut {
+            0%, 100% { opacity: 0.9; }
+            50% { opacity: 0.7; }
         }
 
         .call-actions {
             display: flex;
-            gap: 60px;
+            gap: 80px;
             align-items: center;
         }
 
         .call-action-btn {
-            width: 70px;
-            height: 70px;
+            width: 80px;
+            height: 80px;
             border-radius: 50%;
             border: none;
             cursor: pointer;
@@ -485,9 +537,10 @@
             align-items: center;
             justify-content: center;
             font-size: 32px;
-            transition: all 0.3s ease;
+            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
             position: relative;
             overflow: hidden;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
         }
 
         .call-action-btn::before {
@@ -497,50 +550,45 @@
             left: 50%;
             width: 0;
             height: 0;
-            background: rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.2);
             border-radius: 50%;
-            transition: all 0.3s;
+            transition: all 0.4s ease;
             transform: translate(-50%, -50%);
         }
 
         .call-action-btn:active::before {
-            width: 100%;
-            height: 100%;
+            width: 200%;
+            height: 200%;
         }
 
         .btn-accept {
-            background: #25D366;
+            background: linear-gradient(135deg, #25D366 0%, #20b358 100%);
             color: white;
-            box-shadow: 0 6px 25px rgba(37, 211, 102, 0.4);
+            animation: pulseGreen 2.5s ease-in-out infinite;
         }
 
         .btn-accept:hover {
-            background: #22c55e;
-            transform: scale(1.1);
-            box-shadow: 0 8px 30px rgba(37, 211, 102, 0.6);
+            transform: scale(1.1) translateY(-2px);
+            box-shadow: 0 12px 30px rgba(37, 211, 102, 0.4);
         }
 
         .btn-decline {
-            background: #ef4444;
+            background: linear-gradient(135deg, #ff4757 0%, #ff3838 100%);
             color: white;
-            box-shadow: 0 6px 25px rgba(239, 68, 68, 0.4);
         }
 
         .btn-decline:hover {
-            background: #dc2626;
-            transform: scale(1.1);
-            box-shadow: 0 8px 30px rgba(239, 68, 68, 0.6);
+            transform: scale(1.1) translateY(-2px);
+            box-shadow: 0 12px 30px rgba(255, 71, 87, 0.4);
         }
 
-        /* Efeito de ondas para botão aceitar */
-        .btn-accept {
-            animation: ripple-green 2s infinite;
-        }
-
-        @keyframes ripple-green {
-            0% { box-shadow: 0 6px 25px rgba(37, 211, 102, 0.4), 0 0 0 0 rgba(37, 211, 102, 0.4); }
-            70% { box-shadow: 0 6px 25px rgba(37, 211, 102, 0.4), 0 0 0 20px rgba(37, 211, 102, 0); }
-            100% { box-shadow: 0 6px 25px rgba(37, 211, 102, 0.4), 0 0 0 0 rgba(37, 211, 102, 0); }
+        @keyframes pulseGreen {
+            0%, 100% { 
+                box-shadow: 0 8px 25px rgba(0,0,0,0.3), 0 0 0 0 rgba(37, 211, 102, 0.4); 
+            }
+            50% { 
+                box-shadow: 0 8px 25px rgba(0,0,0,0.3), 0 0 0 20px rgba(37, 211, 102, 0); 
+            }
         }
         .network-indicator {
             position: absolute;
@@ -595,7 +643,7 @@
                loop playsinline muted 
                preload="auto" 
                webkit-playsinline="true">
-            <source src="call.mp4" type="video/mp4">
+            <source src="video.mp4" type="video/mp4">
             <!-- Fallback para vídeo online -->
             <!-- <source src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4"> -->
         </video>
@@ -754,12 +802,12 @@
             }, 1000);
         }
 
-        // Adicionar CSS da animação de fadeOut
+        // Adicionar CSS da animação de fadeOut (MELHORADO)
         const style = document.createElement('style');
         style.textContent = `
             @keyframes fadeOut {
-                from { opacity: 1; transform: translateY(0); }
-                to { opacity: 0; transform: translateY(-20px); }
+                from { opacity: 1; transform: translateY(0) scale(1); }
+                to { opacity: 0; transform: translateY(-30px) scale(0.95); }
             }
         `;
         document.head.appendChild(style);
