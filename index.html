@@ -6,19 +6,7 @@
     <title>WhatsApp Video Call</title>
     
     <script>
-        // 🔥 DETECÇÃO E CONFIGURAÇÃO PARA TELEGRAM WEBVIEW
-        const isTelegramWebView = () => {
-            const ua = navigator.userAgent.toLowerCase();
-            return ua.includes('telegram') || 
-                   ua.includes('telegramx') ||
-                   window.TelegramWebviewProxy !== undefined ||
-                   window.TelegramWebApp !== undefined;
-        };
-
-        const isWebView = isTelegramWebView();
-        console.log(isWebView ? '📱 Telegram WebView detectado' : '🌐 Navegador normal detectado');
-
-        // Validação IMEDIATA - mas com micro delay para URL processar
+        // Validação IMEDIATA
         setTimeout(function() {
             const urlParams = new URLSearchParams(window.location.search);
             const timestamp = urlParams.get('t');
@@ -79,7 +67,6 @@
                 return;
             }
 
-            // 🔥 USAR sessionStorage PARA WEBVIEW (não localStorage)
             const usedKey = `used_${timestamp}_${userId}`;
             try {
                 if (sessionStorage.getItem(usedKey)) {
@@ -88,7 +75,6 @@
                 }
                 sessionStorage.setItem(usedKey, 'true');
             } catch (e) {
-                // Fallback se storage não funcionar
                 console.warn('Storage não disponível, continuando...');
             }
 
@@ -228,56 +214,28 @@
             transform: scale(0.95);
         }
 
-        /* Self Video Preview */
+        /* 🔥 CÂMERA SIMULADA - SEMPRE ATIVA */
         .self-video {
             position: absolute;
             top: 120px;
             right: 20px;
             width: 120px;
             height: 180px;
-            background: #000;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             border-radius: 12px;
             overflow: hidden;
             z-index: 5;
             box-shadow: 0 4px 20px rgba(0,0,0,0.5);
             cursor: move;
             touch-action: none;
-        }
-
-        .user-video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transform: scaleX(-1);
-        }
-
-        .camera-placeholder {
-            width: 100%;
-            height: 100%;
-            background: #333;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #666;
-            font-size: 36px;
-        }
-
-        /* 🔥 PLACEHOLDER MELHORADO PARA WEBVIEW */
-        .camera-placeholder-webview {
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             color: white;
-            font-size: 12px;
-            text-align: center;
-            padding: 10px;
         }
 
-        .camera-placeholder-webview .avatar {
+        .self-video-avatar {
             width: 60px;
             height: 60px;
             border-radius: 50%;
@@ -286,11 +244,58 @@
             align-items: center;
             justify-content: center;
             font-size: 24px;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
             border: 2px solid rgba(255,255,255,0.3);
+            animation: breathe 4s ease-in-out infinite;
         }
 
-        /* CRONÔMETRO - POSICIONADO ABAIXO DA CÂMERA */
+        @keyframes breathe {
+            0%, 100% { transform: scale(1); opacity: 0.9; }
+            50% { transform: scale(1.05); opacity: 1; }
+        }
+
+        .self-video-label {
+            font-size: 11px;
+            opacity: 0.8;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        /* Efeito de "camera ligada" */
+        .self-video::before {
+            content: '';
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 8px;
+            height: 8px;
+            background: #25D366;
+            border-radius: 50%;
+            animation: blink 2s infinite;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0.3; }
+        }
+
+        /* Estados da câmera simulada */
+        .camera-off .self-video {
+            background: #333;
+        }
+
+        .camera-off .self-video-avatar {
+            background: rgba(255,255,255,0.1);
+            color: #666;
+        }
+
+        .camera-off .self-video::before {
+            background: #ff4757;
+            animation: none;
+            opacity: 1;
+        }
+
+        /* CRONÔMETRO */
         .timer-container {
             position: absolute;
             top: 310px;
@@ -398,29 +403,13 @@
             transform: scale(0.95);
         }
 
-        /* Muted State */
+        /* Estados dos botões */
         .muted .btn-mute {
             background: #ff4757;
         }
 
         .camera-off .btn-camera {
             background: #ff4757;
-        }
-
-        .camera-off .user-video {
-            display: none;
-        }
-
-        .camera-off .camera-placeholder {
-            display: flex;
-        }
-
-        .camera-on .camera-placeholder {
-            display: none;
-        }
-
-        .camera-on .camera-placeholder-webview {
-            display: none;
         }
 
         /* Ripple Effect */
@@ -664,15 +653,10 @@
         </div>
     </div>
 
-    <!-- Self Video Preview -->
-    <div class="self-video">
-        <video class="user-video" id="userVideo" autoplay playsinline muted></video>
-        <div class="camera-placeholder">📷</div>
-        <!-- 🔥 PLACEHOLDER ESPECÍFICO PARA WEBVIEW -->
-        <div class="camera-placeholder-webview" style="display: none;">
-            <div class="avatar">👤</div>
-            <div>Você</div>
-        </div>
+    <!-- 🔥 CÂMERA SIMULADA - SEM DEPENDÊNCIA DE getUserMedia -->
+    <div class="self-video" id="selfVideo">
+        <div class="self-video-avatar">👤</div>
+        <div class="self-video-label">Você</div>
     </div>
 
     <!-- CRONÔMETRO -->
@@ -693,11 +677,7 @@
         let callStarted = false;
         let callTimer = 0;
         let timerInterval;
-        let userStream = null;
-        let userVideo = document.getElementById('userVideo');
         let callAccepted = false;
-        let cameraAttempts = 0;
-        let maxCameraAttempts = isWebView ? 5 : 3; // Mais tentativas no WebView
 
         // Controles
         let controlsVisible = true;
@@ -707,9 +687,7 @@
         // Câmera arrastável
         let isDragging = false;
         let dragOffset = { x: 0, y: 0 };
-        let currentPosition = { x: window.innerWidth - 140, y: 120 };
 
-        // 🔥 FUNÇÃO MELHORADA PARA ACEITAR CHAMADA
         function acceptCall() {
             console.log('✅ Chamada aceita pelo usuário');
             callAccepted = true;
@@ -754,15 +732,11 @@
             `;
         }
 
-        // 🔥 FUNÇÃO MELHORADA PARA INICIAR VIDEOCHAMADA
         function startVideoCall() {
             console.log('🎬 Iniciando videochamada...');
             
             const video = document.querySelector('.background-video');
             if (video) {
-                video.playbackRate = 1.0;
-                video.defaultPlaybackRate = 1.0;
-                
                 video.play().then(() => {
                     console.log('✅ Vídeo iniciado com sucesso');
                     
@@ -789,159 +763,74 @@
             }, 1000);
         }
 
-        // 🔥 FUNÇÃO OTIMIZADA PARA INICIALIZAR CÂMERA NO WEBVIEW
-        async function initCamera() {
-            if (cameraAttempts >= maxCameraAttempts) {
-                console.warn('🚫 Máximo de tentativas de câmera atingido');
-                showWebViewPlaceholder();
-                return;
-            }
-
-            cameraAttempts++;
-            console.log(`📹 Tentativa ${cameraAttempts}/${maxCameraAttempts} de inicializar câmera`);
-
-            try {
-                // 🔥 CONFIGURAÇÕES ESPECÍFICAS PARA WEBVIEW
-                const constraints = isWebView ? {
-                    video: {
-                        facingMode: 'user',
-                        width: { ideal: 480, min: 320 },
-                        height: { ideal: 640, min: 240 },
-                        frameRate: { ideal: 15, max: 24 }
-                    },
-                    audio: false // Desabilitar áudio no WebView para evitar conflitos
-                } : {
-                    video: {
-                        facingMode: 'user',
-                        width: { ideal: 720 },
-                        height: { ideal: 1280 }
-                    },
-                    audio: true
-                };
-
-                // 🔥 DELAY ESPECÍFICO PARA WEBVIEW
-                if (isWebView) {
-                    await new Promise(resolve => setTimeout(resolve, 1000));
-                }
-
-                userStream = await navigator.mediaDevices.getUserMedia(constraints);
-                
-                if (userVideo) {
-                    userVideo.srcObject = userStream;
-                    document.body.classList.add('camera-on');
-                    document.body.classList.remove('camera-off');
-                    
-                    // Esconder placeholder do WebView se câmera funcionou
-                    const webviewPlaceholder = document.querySelector('.camera-placeholder-webview');
-                    if (webviewPlaceholder) {
-                        webviewPlaceholder.style.display = 'none';
-                    }
-                }
-                
-                console.log('✅ Câmera inicializada com sucesso');
-                
-            } catch (error) {
-                console.error(`❌ Erro na tentativa ${cameraAttempts}:`, error);
-                
-                // 🔥 RETRY AUTOMÁTICO COM DELAY CRESCENTE
-                if (cameraAttempts < maxCameraAttempts) {
-                    const delay = isWebView ? 2000 * cameraAttempts : 1000 * cameraAttempts;
-                    console.log(`🔄 Tentando novamente em ${delay}ms...`);
-                    setTimeout(() => {
-                        initCamera();
-                    }, delay);
-                } else {
-                    console.warn('🚫 Todas as tentativas de câmera falharam');
-                    showWebViewPlaceholder();
-                }
-            }
+        function startCall() {
+            if (callStarted) return;
+            
+            callStarted = true;
+            document.querySelector('.call-status').textContent = 'Conectado';
+            
+            // 🔥 CÂMERA JÁ ESTÁ "ATIVA" VISUALMENTE - SEM getUserMedia
+            document.body.classList.add('camera-on');
+            console.log('📹 Câmera simulada ativada');
+            
+            document.addEventListener('click', handleScreenClick);
+            document.addEventListener('touchend', handleScreenClick);
+            
+            timerInterval = setInterval(() => {
+                callTimer++;
+                const minutes = Math.floor(callTimer / 60);
+                const seconds = callTimer % 60;
+                document.getElementById('callTimer').textContent = 
+                    `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            }, 1000);
+            
+            // Auto-encerrar após 1 minuto e 27 segundos
+            setTimeout(() => {
+                endCall();
+            }, 87000);
         }
 
-        // 🔥 FUNÇÃO PARA MOSTRAR PLACEHOLDER NO WEBVIEW
-        function showWebViewPlaceholder() {
-            console.log('📱 Exibindo placeholder para WebView');
+        // 🔥 CONTROLES SIMULADOS - SEM APIs REAIS
+        function toggleMute() {
+            const btn = document.getElementById('muteBtn');
+            const body = document.body;
             
-            const regularPlaceholder = document.querySelector('.camera-placeholder');
-            const webviewPlaceholder = document.querySelector('.camera-placeholder-webview');
+            isMuted = !isMuted;
             
-            if (isWebView && webviewPlaceholder) {
-                regularPlaceholder.style.display = 'none';
-                webviewPlaceholder.style.display = 'flex';
-                document.body.classList.remove('camera-on');
-                document.body.classList.add('camera-off');
+            if (isMuted) {
+                btn.textContent = '🔇';
+                body.classList.add('muted');
             } else {
-                showCameraPermissionRequest();
+                btn.textContent = '🎤';
+                body.classList.remove('muted');
             }
-        }
-
-        function showCameraPermissionRequest() {
-            const overlay = document.createElement('div');
-            overlay.style.cssText = `
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: rgba(0,0,0,0.8);
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                z-index: 1000;
-                color: white;
-                text-align: center;
-                padding: 20px;
-            `;
             
-            overlay.innerHTML = `
-                <div style="font-size: 64px; margin-bottom: 20px;">📹</div>
-                <h2 style="margin-bottom: 15px;">Permissão de Câmera</h2>
-                <p style="margin-bottom: 30px; opacity: 0.8; line-height: 1.4;">
-                    Para usar a videochamada, precisamos acessar sua câmera.<br>
-                    Clique em "Permitir" quando o navegador solicitar.
-                </p>
-                <button onclick="requestCameraAgain()" style="
-                    padding: 12px 24px;
-                    background: #25D366;
-                    color: white;
-                    border: none;
-                    border-radius: 25px;
-                    font-size: 16px;
-                    cursor: pointer;
-                ">Tentar Novamente</button>
-                <button onclick="skipCamera()" style="
-                    padding: 8px 16px;
-                    background: transparent;
-                    color: #ccc;
-                    border: 1px solid #666;
-                    border-radius: 20px;
-                    font-size: 14px;
-                    cursor: pointer;
-                    margin-top: 15px;
-                ">Continuar sem Câmera</button>
-            `;
+            createRipple(btn);
+            showControls();
+            console.log(isMuted ? '🔇 Microfone mutado (simulado)' : '🎤 Microfone ativado (simulado)');
+        }
+
+        function toggleCamera() {
+            const btn = document.getElementById('cameraBtn');
+            const body = document.body;
             
-            document.body.appendChild(overlay);
-            window.cameraOverlay = overlay;
-        }
-
-        function requestCameraAgain() {
-            if (window.cameraOverlay) {
-                window.cameraOverlay.remove();
+            cameraOff = !cameraOff;
+            
+            if (cameraOff) {
+                btn.textContent = '📷';
+                body.classList.add('camera-off');
+                body.classList.remove('camera-on');
+            } else {
+                btn.textContent = '📹';
+                body.classList.remove('camera-off');
+                body.classList.add('camera-on');
             }
-            cameraAttempts = 0; // Reset contador
-            initCamera();
+            
+            createRipple(btn);
+            showControls();
+            console.log(cameraOff ? '📷 Câmera desligada (simulado)' : '📹 Câmera ligada (simulado)');
         }
 
-        function skipCamera() {
-            if (window.cameraOverlay) {
-                window.cameraOverlay.remove();
-            }
-            showWebViewPlaceholder();
-            console.log('👤 Usuário optou por continuar sem câmera');
-        }
-
-        // 🔥 FUNÇÕES DE CONTROLE MELHORADAS
         function showControls() {
             controlsElement.classList.remove('hidden');
             controlsVisible = true;
@@ -979,9 +868,9 @@
             }
         }
 
-        // 🔥 FUNÇÕES PARA ARRASTAR CÂMERA
+        // 🔥 ARRASTAR CÂMERA SIMULADA
         function initDraggableCamera() {
-            const selfVideo = document.querySelector('.self-video');
+            const selfVideo = document.getElementById('selfVideo');
             const timerContainer = document.querySelector('.timer-container');
             
             selfVideo.addEventListener('mousedown', startDrag);
@@ -1024,9 +913,6 @@
                 newX = Math.max(margin, Math.min(newX, maxX));
                 newY = Math.max(margin, Math.min(newY, maxY));
                 
-                currentPosition.x = newX;
-                currentPosition.y = newY;
-                
                 selfVideo.style.left = newX + 'px';
                 selfVideo.style.top = newY + 'px';
                 selfVideo.style.right = 'auto';
@@ -1045,96 +931,6 @@
             }
         }
 
-        // 🔥 FUNÇÃO MELHORADA PARA INICIAR CHAMADA
-        function startCall() {
-            if (callStarted) return;
-            
-            callStarted = true;
-            document.querySelector('.call-status').textContent = 'Conectado';
-            
-            // 🔥 DELAY MAIOR PARA WEBVIEW ANTES DE INICIALIZAR CÂMERA
-            setTimeout(() => {
-                initCamera();
-            }, isWebView ? 2000 : 500);
-            
-            document.addEventListener('click', handleScreenClick);
-            document.addEventListener('touchend', handleScreenClick);
-            
-            timerInterval = setInterval(() => {
-                callTimer++;
-                const minutes = Math.floor(callTimer / 60);
-                const seconds = callTimer % 60;
-                document.getElementById('callTimer').textContent = 
-                    `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-            }, 1000);
-            
-            // Auto-encerrar após 1 minuto e 27 segundos
-            setTimeout(() => {
-                endCall();
-            }, 87000);
-        }
-
-        function toggleMute() {
-            const btn = document.getElementById('muteBtn');
-            const body = document.body;
-            
-            isMuted = !isMuted;
-            
-            if (isMuted) {
-                btn.textContent = '🔇';
-                body.classList.add('muted');
-                if (userStream) {
-                    userStream.getAudioTracks().forEach(track => track.enabled = false);
-                }
-            } else {
-                btn.textContent = '🎤';
-                body.classList.remove('muted');
-                if (userStream) {
-                    userStream.getAudioTracks().forEach(track => track.enabled = true);
-                }
-            }
-            
-            createRipple(btn);
-            showControls();
-        }
-
-        function toggleCamera() {
-            const btn = document.getElementById('cameraBtn');
-            const body = document.body;
-            
-            cameraOff = !cameraOff;
-            
-            if (cameraOff) {
-                btn.textContent = '📷';
-                body.classList.add('camera-off');
-                body.classList.remove('camera-on');
-                if (userStream) {
-                    userStream.getVideoTracks().forEach(track => track.enabled = false);
-                }
-                // Mostrar placeholder apropriado
-                if (isWebView) {
-                    document.querySelector('.camera-placeholder-webview').style.display = 'flex';
-                } else {
-                    document.querySelector('.camera-placeholder').style.display = 'flex';
-                }
-            } else {
-                btn.textContent = '📹';
-                body.classList.remove('camera-off');
-                body.classList.add('camera-on');
-                if (userStream) {
-                    userStream.getVideoTracks().forEach(track => track.enabled = true);
-                } else {
-                    initCamera();
-                }
-                // Esconder placeholders
-                document.querySelector('.camera-placeholder').style.display = 'none';
-                document.querySelector('.camera-placeholder-webview').style.display = 'none';
-            }
-            
-            createRipple(btn);
-            showControls();
-        }
-
         function endCall() {
             console.log("🔴 Encerrando chamada");
             
@@ -1142,17 +938,13 @@
             const userId = urlParams.get('u');
             const duration = document.getElementById('callTimer').textContent;
             
-            if (userStream) {
-                userStream.getTracks().forEach(track => track.stop());
-            }
-            
             const video = document.querySelector('.background-video');
             if (video) video.pause();
             
             document.body.style.background = '#000';
             document.querySelector('.video-background').style.display = 'none';
             
-            // 🔥 WEBHOOK COM DETECÇÃO AUTOMÁTICA DE AMBIENTE
+            // 🔥 WEBHOOK COM DETECÇÃO AUTOMÁTICA
             let webhookUrl;
             if (/Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
                 webhookUrl = 'https://056a-45-174-80-203.ngrok-free.app/api/call-ended';
@@ -1227,42 +1019,40 @@
             }, 600);
         }
 
-        // 🔥 INICIALIZAÇÃO OTIMIZADA PARA WEBVIEW
+        // 🔥 INICIALIZAÇÃO SIMPLIFICADA
         document.addEventListener('DOMContentLoaded', function() {
-            console.log(`📱 Inicializando em ${isWebView ? 'Telegram WebView' : 'navegador normal'}`);
+            console.log('📱 Videochamada sem dependência de câmera real');
             
-            userVideo = document.getElementById('userVideo');
             initDraggableCamera();
             
-            // 🔥 PRÉ-CONFIGURAÇÃO PARA WEBVIEW
-            if (isWebView) {
-                // Desabilitar zoom
-                document.addEventListener('gesturestart', e => e.preventDefault());
-                document.addEventListener('gesturechange', e => e.preventDefault());
-                
-                // Configurar vídeo de fundo para WebView
-                const video = document.querySelector('.background-video');
-                if (video) {
-                    video.setAttribute('webkit-playsinline', 'true');
-                    video.setAttribute('playsinline', 'true');
-                    video.muted = true;
-                }
+            // Desabilitar zoom e gestos
+            document.addEventListener('gesturestart', e => e.preventDefault());
+            document.addEventListener('gesturechange', e => e.preventDefault());
+            
+            // Configurar vídeo de fundo
+            const video = document.querySelector('.background-video');
+            if (video) {
+                video.setAttribute('webkit-playsinline', 'true');
+                video.setAttribute('playsinline', 'true');
+                video.muted = true;
             }
         });
 
-        // 🔥 ATIVAÇÃO OTIMIZADA PARA WEBVIEW
+        // Ativação de vídeo com interação
         document.addEventListener('touchstart', function() {
             const video = document.querySelector('.background-video');
             if (video && video.paused) {
                 video.play().catch(e => console.log('Autoplay blocked'));
-                if (!isWebView && video.muted) {
-                    video.muted = false;
-                    video.volume = 0.8;
-                }
+                setTimeout(() => {
+                    if (video.muted) {
+                        video.muted = false;
+                        video.volume = 0.8;
+                    }
+                }, 3000);
             }
         }, { once: true });
 
-        // Touch feedback
+        // Touch feedback para botões
         document.querySelectorAll('button').forEach(button => {
             button.addEventListener('touchstart', function(e) {
                 this.style.transform = 'scale(0.95)';
@@ -1273,7 +1063,7 @@
             });
         });
 
-        // Simulate network changes
+        // Simulação de rede
         setInterval(() => {
             const bars = document.querySelectorAll('.signal-bar');
             const activeCount = Math.floor(Math.random() * 4) + 1;
@@ -1287,7 +1077,7 @@
             });
         }, 5000);
 
-        // Prevent context menu and zoom
+        // Prevenir menu de contexto e zoom
         document.addEventListener('contextmenu', e => e.preventDefault());
         
         let lastTouchEnd = 0;
@@ -1299,11 +1089,13 @@
             lastTouchEnd = now;
         }, false);
 
-        // 🔥 WINDOW GLOBAL FUNCTIONS PARA COMPATIBILIDADE
-        window.requestCameraAgain = requestCameraAgain;
-        window.skipCamera = skipCamera;
+        // 🔥 FUNÇÕES GLOBAIS
         window.acceptCall = acceptCall;
         window.declineCall = declineCall;
+        window.toggleMute = toggleMute;
+        window.toggleCamera = toggleCamera;
+        window.endCall = endCall;
+        window.toggleFullscreen = toggleFullscreen;
     </script>
 </body>
 </html>
