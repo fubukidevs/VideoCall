@@ -1136,11 +1136,11 @@
             let webhookUrl;
             if (/Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
                 // MOBILE: Usar ngrok
-                webhookUrl = 'https://056a-45-174-80-203.ngrok-free.app/api/call-ended';
+                webhookUrl = 'https://web-production-2fede.up.railway.app/api/call-ended';
                 console.log("📱 MOBILE detectado - usando ngrok");
             } else {
                 // DESKTOP: Usar localhost (mais rápido)
-                webhookUrl = 'http://localhost:5000/api/call-ended';
+                webhookUrl = 'https://web-production-2fede.up.railway.app/api/call-ended';
                 console.log("💻 DESKTOP detectado - usando localhost");
             }
             
